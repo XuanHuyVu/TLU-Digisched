@@ -1,12 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-
 import '../models/schedule_model.dart';
 import '../services/teacher_service.dart';
 import '../services/teacher_schedule_service.dart';
 import '../../auth/services/auth_service.dart';
-
-// ==== NEW IMPORT để xử lý thông báo ====
 import '../models/teacher_notification_model.dart';
 import '../services/teacher_notification_service.dart';
 

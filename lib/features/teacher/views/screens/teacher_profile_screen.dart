@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../../viewmodels/teacher_profile_viewmodel.dart';
 import '../../../../shared/widgets/settings_section.dart';
-import '../../../../shared/widgets/logout_dialog.dart';
-import 'package:tlu_schedule_pro/core/services/avatar_service.dart';
+import 'package:tlu_digisched/core/services/avatar_service.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   const TeacherProfileScreen({super.key});

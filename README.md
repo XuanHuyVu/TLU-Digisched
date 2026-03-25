@@ -1,4 +1,4 @@
-# tlu_schedule_pro
+# TLU Digisched
 
 Student support application of Thuy Loi University
 

@@ -23,6 +23,12 @@ class _ClassCancelScreenState extends State<ClassCancelScreen> {
   PlatformFile? _selectedFile;
   bool _isSubmitting = false;
 
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -37,6 +43,7 @@ class _ClassCancelScreenState extends State<ClassCancelScreen> {
         });
       }
     } catch (e) {
+      if(!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lỗi khi chọn file: $e'),
@@ -91,11 +98,6 @@ class _ClassCancelScreenState extends State<ClassCancelScreen> {
         });
       }
     }
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'Không xác định';
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
   @override

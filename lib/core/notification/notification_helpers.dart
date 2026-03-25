@@ -40,7 +40,7 @@ Future<void> scheduleTwoRemindersForItem(ScheduleModel item) async {
   if (d == null || parsed == null) return;
 
   final (start, end) = parsed;
-  final baseId = (item.id ?? item.hashCode).abs();
+  final baseId = (item.id).abs();
 
   // 1) Nhắc 15' trước bắt đầu
   await AppNotificationService.I.scheduleReminderBefore(
@@ -83,7 +83,7 @@ Future<void> scheduleDoneWindowReminder(
   final notifyAt = windowStart.subtract(Duration(minutes: notifyOffsetBeforeWindow));
   if (!notifyAt.isAfter(DateTime.now())) return;
 
-  final baseId = (item.id ?? item.hashCode).abs();
+  final baseId = (item.id).abs();
   final kind = notifyOffsetBeforeWindow > 0 ? 9 : 8;
 
   await AppNotificationService.I.scheduleReminderBefore(
@@ -100,14 +100,14 @@ Future<void> scheduleDoneWindowReminder(
 
 /// HỦY 2 thông báo đã đặt cho 1 buổi dạy (teacher)
 Future<void> cancelTwoRemindersForItem(ScheduleModel item) async {
-  final baseId = (item.id ?? item.hashCode).abs();
+  final baseId = (item.id).abs();
   await AppNotificationService.I.cancel(_notifId(baseId, 1));
   await AppNotificationService.I.cancel(_notifId(baseId, 2));
 }
 
 /// HỦY các nhắc liên quan đến “cửa sổ hoàn thành buổi dạy”
 Future<void> cancelDoneWindowReminders(ScheduleModel item) async {
-  final baseId = (item.id ?? item.hashCode).abs();
+  final baseId = (item.id).abs();
   await AppNotificationService.I.cancel(_notifId(baseId, 8));
   await AppNotificationService.I.cancel(_notifId(baseId, 9));
 }

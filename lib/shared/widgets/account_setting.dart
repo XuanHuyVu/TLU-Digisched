@@ -1,18 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'logout_dialog.dart';
 import 'package:provider/provider.dart';
-import 'package:tlu_schedule_pro/features/auth/viewmodels/auth_viewmodel.dart';
+import 'package:tlu_digisched/features/auth/viewmodels/auth_viewmodel.dart';
+import 'logout_dialog.dart';
 
 class AccountSettingsScreen extends StatelessWidget {
-  const AccountSettingsScreen({Key? key}) : super(key: key);
+  const AccountSettingsScreen({super.key});
 
   Future<void> _logout(BuildContext context) async {
     final shouldLogout = await showLogoutConfirmationDialog(context);
-    if (shouldLogout) {
-      final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    if (!shouldLogout) return;
+    if (!context.mounted) return;
+    final authViewModel = context.read<AuthViewModel>();
+
+    try {
       await authViewModel.logout();
-      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      if (!context.mounted) return;
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đăng xuất thất bại: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -36,12 +52,12 @@ class AccountSettingsScreen extends StatelessWidget {
             _buildSettingOption(
               icon: Icons.notifications,
               label: "Cài đặt thông báo",
-              onTap: () {},
+              onTap: () {}, // TODO: Thêm navigation nếu cần
             ),
             _buildSettingOption(
               icon: Icons.language,
               label: "Ngôn ngữ",
-              onTap: () {},
+              onTap: () {}, // TODO: Thêm navigation nếu cần
             ),
             _buildSettingOption(
               icon: Icons.logout,

@@ -39,8 +39,7 @@ String statusToApi(ScheduleStatus s) {
       return 'SAP_DAY';
     case ScheduleStatus.expired:
     case ScheduleStatus.unknown:
-    default:
-      return 'UNKNOWN';
+    return 'UNKNOWN';
   }
 }
 

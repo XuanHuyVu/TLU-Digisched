@@ -146,7 +146,7 @@ class _HomeTab extends StatelessWidget {
 
 class _TopBar extends StatelessWidget {
   final String name;
-  const _TopBar({super.key, required this.name});
+  const _TopBar({required this.name});
 
   String _getInitials(String fullName) {
     final parts = fullName.trim().split(RegExp(r'\\s+'));

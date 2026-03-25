@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb; // thêm dòng này
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb; // thêm dòng này
 import 'dart:io' show Platform; // vẫn giữ cho mobile
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -74,7 +74,9 @@ class AppNotificationService {
   }) async {
     await init();
     if (kIsWeb) {
-      print("🔔 [WEB] Fake notification: $title - $body");
+      if (kDebugMode) {
+        print("🔔 [WEB] Fake notification: $title - $body");
+      }
       return;
     }
     await _fln.show(
@@ -104,7 +106,9 @@ class AppNotificationService {
     await init();
 
     if (kIsWeb) {
-      print("🔔 [WEB] Fake schedule: $title - $body at ${classStartLocal.subtract(before)}");
+      if (kDebugMode) {
+        print("🔔 [WEB] Fake schedule: $title - $body at ${classStartLocal.subtract(before)}");
+      }
       return;
     }
 
