@@ -85,7 +85,7 @@ class TeacherScheduleViewModel extends ChangeNotifier {
             scheduleId: id,
             title: 'Sắp đến giờ dạy',
             body:
-            '${s.subjectName ?? 'Môn học'} - Phòng ${s.roomName ?? ''} bắt đầu lúc ${_hhmm(start)}',
+            '${s.subjectName} - Phòng ${s.roomName} bắt đầu lúc ${_hhmm(start)}',
             classStartLocal: start,
             before: const Duration(minutes: 15),
           );
@@ -97,7 +97,7 @@ class TeacherScheduleViewModel extends ChangeNotifier {
             scheduleId: id + 50000,
             title: 'Chuẩn bị hoàn thành',
             body:
-            'Buổi ${s.subjectName ?? 'môn học'} sắp kết thúc, bạn có thể bấm Hoàn thành sau giờ học.',
+            'Buổi ${s.subjectName} sắp kết thúc, bạn có thể bấm Hoàn thành sau giờ học.',
             classStartLocal: end,
             before: const Duration(minutes: 30),
           );
@@ -197,7 +197,7 @@ class TeacherScheduleViewModel extends ChangeNotifier {
       await AppNotificationService.I.showNow(
         title: 'Đã hoàn thành buổi dạy',
         body:
-        '${item.subjectName ?? 'Môn học'} (${_dateVN(start)} ${_hhmm(start)}) đã được đánh dấu hoàn thành.',
+        '${item.subjectName} (${_dateVN(start)} ${_hhmm(start)}) đã được đánh dấu hoàn thành.',
         id: id + 100000,
       );
     } catch (e) {

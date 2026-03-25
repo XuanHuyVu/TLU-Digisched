@@ -11,7 +11,7 @@ extension ScheduleStatusStyleX on ScheduleStatus {
       case ScheduleStatus.expired:  return 'QUÁ GIỜ';
       case ScheduleStatus.canceled:
       case ScheduleStatus.unknown:
-      default: return '';
+      return '';
     }
   }
 
@@ -23,7 +23,7 @@ extension ScheduleStatusStyleX on ScheduleStatus {
       case ScheduleStatus.expired:  return const Color(0xFFE53935); // đỏ
       case ScheduleStatus.canceled:
       case ScheduleStatus.unknown:
-      default: return Colors.grey;
+      return Colors.grey;
     }
   }
 }

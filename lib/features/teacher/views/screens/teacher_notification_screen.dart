@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tlu_schedule_pro/features/teacher/models/teacher_notification_model.dart';
-import 'package:tlu_schedule_pro/features/teacher/services/teacher_notification_service.dart';
-import 'teacher_schedule_screen.dart';
+import 'package:tlu_digisched/features/teacher/models/teacher_notification_model.dart';
+import 'package:tlu_digisched/features/teacher/services/teacher_notification_service.dart';
 
 class TeacherNotificationScreen extends StatefulWidget {
   const TeacherNotificationScreen({super.key});
@@ -14,8 +13,7 @@ class TeacherNotificationScreen extends StatefulWidget {
 
 class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
   late Future<List<TeacherNotification>> _futureNotifications;
-  final TeacherNotificationService _notificationService =
-  TeacherNotificationService();
+  final TeacherNotificationService _notificationService = TeacherNotificationService();
 
   @override
   void initState() {
@@ -45,9 +43,7 @@ class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
             splashRadius: 24,
             tooltip: 'Quay lại Trang Chủ',
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
+            onPressed: () => Navigator.of(context).pop(),
           ),
           centerTitle: true,
           title: Text(
@@ -69,12 +65,11 @@ class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
             ],
           ),
           actions: [
-
             IconButton(
               icon: const Icon(Icons.search, color: Colors.white),
               tooltip: 'Tìm kiếm',
               onPressed: () {
-                // Logic tìm kiếm nếu cần
+                // TODO: Thêm chức năng tìm kiếm
               },
             ),
           ],
@@ -84,7 +79,9 @@ class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
+            }
+
+            if (snapshot.hasError) {
               return Center(child: Text('Lỗi: ${snapshot.error}'));
             }
 
@@ -118,6 +115,8 @@ class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
   }
 }
 
+// ====================== NOTIFICATION LIST ======================
+
 class TeacherNotificationList extends StatefulWidget {
   final List<TeacherNotification> notifications;
   final TeacherNotificationService notificationService;
@@ -131,8 +130,7 @@ class TeacherNotificationList extends StatefulWidget {
   });
 
   @override
-  State<TeacherNotificationList> createState() =>
-      _TeacherNotificationListState();
+  State<TeacherNotificationList> createState() => _TeacherNotificationListState();
 }
 
 class _TeacherNotificationListState extends State<TeacherNotificationList> {
@@ -175,13 +173,11 @@ class _TeacherNotificationListState extends State<TeacherNotificationList> {
                 Positioned(
                   right: 0,
                   top: 0,
-                  child: CircleAvatar(
-                      radius: 5, backgroundColor: Colors.red),
+                  child: CircleAvatar(radius: 5, backgroundColor: Colors.red),
                 ),
               ],
             ),
-            title: Text(n.title,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(n.title, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -196,38 +192,17 @@ class _TeacherNotificationListState extends State<TeacherNotificationList> {
             isThreeLine: true,
             trailing: PopupMenuButton<String>(
               icon: const Icon(Icons.more_horiz),
-              onSelected: (value) {
-                switch (value) {
-                  case 'delete':
-                    _showDeleteConfirmation(context, n);
-                    break;
-                  case 'mark_read':
-                    _markAsRead(context, n);
-                    break;
-                  case 'mark_unread':
-                    _markAsUnread(context, n);
-                    break;
-                }
-              },
+              onSelected: (value) => _handleMenuAction(context, value, n),
               itemBuilder: (context) => [
-                const PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Text('Xóa'),
-                ),
+                const PopupMenuItem(value: 'delete', child: Text('Xóa')),
                 if (!n.isRead)
-                  const PopupMenuItem<String>(
-                    value: 'mark_read',
-                    child: Text('Đánh dấu đã đọc'),
-                  ),
+                  const PopupMenuItem(value: 'mark_read', child: Text('Đánh dấu đã đọc')),
                 if (n.isRead)
-                  const PopupMenuItem<String>(
-                    value: 'mark_unread',
-                    child: Text('Đánh dấu chưa đọc'),
-                  ),
+                  const PopupMenuItem(value: 'mark_unread', child: Text('Đánh dấu chưa đọc')),
               ],
             ),
             onTap: () {
-              // Hành động khi nhấn thông báo nếu cần
+              // TODO: Xử lý khi nhấn vào thông báo
             },
           ),
         );
@@ -242,61 +217,83 @@ class _TeacherNotificationListState extends State<TeacherNotificationList> {
         "${dateTime.minute.toString().padLeft(2, '0')}";
   }
 
-  void _showDeleteConfirmation(
-      BuildContext context, TeacherNotification notification) {
+  // ==================== XỬ LÝ MENU (ĐÃ SỬA) ====================
+  void _handleMenuAction(BuildContext context, String value, TeacherNotification notification) {
+    switch (value) {
+      case 'delete':
+        _showDeleteConfirmation(context, notification);
+        break;
+      case 'mark_read':
+        _markAsRead(notification);
+        break;
+      case 'mark_unread':
+        _markAsUnread(notification);
+        break;
+    }
+  }
+
+  void _showDeleteConfirmation(BuildContext context, TeacherNotification notification) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Xác nhận'),
         content: const Text('Bạn có chắc muốn xóa thông báo này?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Hủy'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              // TODO: Gọi API xóa nếu có
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Đã xóa thông báo')),
-              );
+              Navigator.pop(dialogContext);
+              // Xóa thật sự (bạn nên gọi API xóa ở đây)
               widget.refreshParent();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Đã xóa thông báo')),
+                );
+              }
             },
-            child: const Text('Xóa'),
+            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 
-  void _markAsRead(
-      BuildContext context, TeacherNotification notification) async {
+  Future<void> _markAsRead(TeacherNotification notification) async {
     try {
       await widget.notificationService.markAsRead(notification.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã đánh dấu là đã đọc')),
-      );
+
+      if (!mounted) return;
 
       setState(() {
-        final i = data.indexWhere((element) => element.id == notification.id);
+        final i = data.indexWhere((e) => e.id == notification.id);
         if (i != -1) {
           data[i] = data[i].copyWith(isRead: true);
         }
       });
 
       widget.refreshParent();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã đánh dấu là đã đọc')),
+      );
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: $e')),
       );
     }
   }
 
-  void _markAsUnread(
-      BuildContext context, TeacherNotification notification) {
+  void _markAsUnread(TeacherNotification notification) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã đánh dấu là chưa đọc (chức năng chưa có)')),
+      const SnackBar(content: Text('Chức năng đánh dấu chưa đọc đang phát triển')),
     );
+    // TODO: Gọi API markAsUnread khi có
   }
 }

@@ -1,16 +1,13 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../models/profile_model.dart';
 import '../../services/profile_service.dart';
-import 'package:tlu_schedule_pro/core/services/avatar_service.dart';
-import 'package:tlu_schedule_pro/shared/widgets/settings_section.dart';
+import 'package:tlu_digisched/core/services/avatar_service.dart';
+import 'package:tlu_digisched/shared/widgets/settings_section.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -237,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: GoogleFonts.poppins(
                                 color: Colors.white70, fontSize: 18)),
                         const SizedBox(height: 8),
-                        Text(user.email ?? "Chưa cập nhật email",
+                        Text(user.email,
                             style: GoogleFonts.poppins(
                                 color: Colors.white70, fontSize: 16),
                             textAlign: TextAlign.center),

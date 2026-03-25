@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:tlu_schedule_pro/features/student/models/notification_model.dart';
-import 'package:tlu_schedule_pro/features/student/viewmodels/notification_viewmodel.dart';
+import 'package:tlu_digisched/features/student/models/notification_model.dart';
+import 'package:tlu_digisched/features/student/viewmodels/notification_viewmodel.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});

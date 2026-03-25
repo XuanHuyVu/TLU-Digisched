@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tlu_schedule_pro/features/student/models/notification_model.dart';
+import 'package:tlu_digisched/features/student/models/notification_model.dart';
 
 class NotificationService {
   String get baseUrl {
