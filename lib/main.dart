@@ -1,27 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'features/auth/viewmodels/auth_viewmodel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'features/auth/presentation/notifiers/auth_notifier.dart';
+import 'features/auth/presentation/notifiers/auth_service_locator.dart';
 import 'features/student/viewmodels/schedule_viewmodel.dart';
-import 'features/auth/views/splash_screen.dart';
-import 'features/auth/views/login_screen.dart';
+import 'features/auth/presentation/views/splash_screen.dart';
+import 'features/auth/presentation/views/login_screen.dart';
 import 'features/student/views/screens/schedule_screen.dart';
+import 'features/lecturer/views/screens/teacher_home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final authVM = AuthViewModel();
-  await authVM.loadUserFromStorage();
-  final token = authVM.user?.token ?? "";
+  final prefs = await SharedPreferences.getInstance();
+  final authNotifier = await AuthServiceLocator.setup(prefs);
+  await authNotifier.loadUserFromStorage();
+
+  final token = authNotifier.user?.token ?? "";
   final scheduleVM = ScheduleViewModel(token);
-  
-  if (authVM.isLoggedIn && token.isNotEmpty) {
+
+  if (authNotifier.isLoggedIn && token.isNotEmpty) {
     scheduleVM.loadSchedules();
   }
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<AuthViewModel>.value(value: authVM),
+        ChangeNotifierProvider<AuthNotifier>.value(value: authNotifier),
         ChangeNotifierProvider<ScheduleViewModel>.value(value: scheduleVM),
       ],
       child: const MyApp(),
@@ -37,15 +42,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'TLU Digisched',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/schedule': (context) => const ScheduleScreen(),
+        '/teacher_home': (context) => const TeacherHomeScreen(),
       },
     );
   }

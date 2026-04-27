@@ -1,24 +1,21 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tlu_digisched/core/constants/constants.dart';
 import 'package:tlu_digisched/features/student/models/notification_model.dart';
+import '../../../config/constants/api_endpoints.dart';
+import '../../../config/constants/constants.dart';
 
 class NotificationService {
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
+    return prefs.getString(Constants.token);
   }
 
   Future<List<NotificationModel>> fetchNotifications() async {
     final token = await _getToken();
-    if (token == null) {
-      throw Exception('Không tìm thấy token. Vui lòng đăng nhập lại.');
-    }
-
-    final uri = Uri.parse('${Constants.baseUrl}/api/student/notifications');
-    final response = await http.get(
-      uri,
+    if (token == null) throw Exception('Không tìm thấy token. Vui lòng đăng nhập lại.');
+    final uri = Uri.parse(ApiEndpoints.studentNotifications);
+    final response = await http.get(uri,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -39,7 +36,7 @@ class NotificationService {
       throw Exception('Không tìm thấy token. Vui lòng đăng nhập lại.');
     }
 
-    final uri = Uri.parse('${Constants.baseUrl}/api/student/notifications/read/$notificationId');
+    final uri = Uri.parse('${ApiEndpoints.studentNotificationsRead}$notificationId');
     final response = await http.put(
       uri,
       headers: {

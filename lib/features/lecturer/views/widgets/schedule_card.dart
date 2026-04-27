@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../models/schedule_model.dart';
 import '../screens/class_cancel_screen.dart';
-import './schedule_status_badge.dart'; // ScheduleStatusStyleX & ScheduleStatusBadge
+import './schedule_status_badge.dart';
 
 class ScheduleCard extends StatelessWidget {
   final ScheduleModel item;
-
-  /// Callback khi bấm Hoàn thành
   final Future<void> Function()? onMarkDone;
-
-  /// Callback mở form NGHỈ DẠY (màn mới sẽ gọi ngược lại)
   final Future<Map<String, dynamic>> Function(String reason, String? fileUrl)? onRequestCancel;
 
   const ScheduleCard({
@@ -19,7 +15,6 @@ class ScheduleCard extends StatelessWidget {
     this.onRequestCancel,
   });
 
-  // ---------------- Dialog helpers ----------------
   Future<void> _showCustomDialog(
       BuildContext context, {
         required String title,
@@ -128,7 +123,6 @@ class ScheduleCard extends StatelessWidget {
     return ok == true;
   }
 
-  // --------------- Time helpers ---------------
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -137,18 +131,15 @@ class ScheduleCard extends StatelessWidget {
     final reg = RegExp(r'(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})');
     final m = reg.firstMatch(tr);
     if (m == null) return null;
-
     final sh = int.parse(m.group(1)!);
     final sm = int.parse(m.group(2)!);
     final eh = int.parse(m.group(3)!);
     final em = int.parse(m.group(4)!);
-
     final start = DateTime(baseDate.year, baseDate.month, baseDate.day, sh, sm);
     final end = DateTime(baseDate.year, baseDate.month, baseDate.day, eh, em);
     return (start, end);
   }
 
-  /// Tính trạng thái thực tế theo thời gian, có 'expired'
   ScheduleStatus get effectiveStatus {
     if (item.status == ScheduleStatus.done) return ScheduleStatus.done;
     if (item.status == ScheduleStatus.canceled) return ScheduleStatus.canceled;
@@ -161,16 +152,13 @@ class ScheduleCard extends StatelessWidget {
 
     final today = DateTime(now.year, now.month, now.day);
     final thatDay = DateTime(d.year, d.month, d.day);
-
     if (thatDay.isAfter(today)) return ScheduleStatus.upcoming;
     if (thatDay.isBefore(today)) return ScheduleStatus.expired;
-
     final range = _parseRangeForDate(today);
     if (range == null) {
       return item.status == ScheduleStatus.unknown ? ScheduleStatus.upcoming : item.status;
     }
     final (start, end) = range;
-
     if (now.isBefore(start)) return ScheduleStatus.upcoming;
     if (now.isAfter(end)) return ScheduleStatus.expired;
     return ScheduleStatus.ongoing;
@@ -179,12 +167,10 @@ class ScheduleCard extends StatelessWidget {
   String _formatHm(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-  /// Kiểm tra có được phép đánh dấu hoàn thành ngay bây giờ không (cửa sổ ±60 phút quanh giờ kết thúc)
   (bool, String?, DateTime?, DateTime?) _canCompleteNow() {
     final now = DateTime.now();
     final d = item.teachingDate;
     if (d == null) return (false, 'Không xác định ngày học.', null, null);
-
     final today = DateTime(now.year, now.month, now.day);
     final thatDay = DateTime(d.year, d.month, d.day);
     if (!_isSameDay(today, thatDay)) {
@@ -196,10 +182,8 @@ class ScheduleCard extends StatelessWidget {
       return (false, 'Không xác định được khung giờ của buổi học.', null, null);
     }
     final (_, end) = range;
-
     final windowStart = end.subtract(const Duration(minutes: 60));
     final windowEnd = end.add(const Duration(minutes: 60));
-
     if (now.isBefore(windowStart)) {
       return (false, 'Chưa đến thời gian: chỉ được đánh dấu trong 60 phút trước khi kết thúc.',
       windowStart, windowEnd);
@@ -229,19 +213,12 @@ class ScheduleCard extends StatelessWidget {
     final header = item.timeRange.isNotEmpty
         ? 'Tiết ${item.periodStart} → ${item.periodEnd} (${item.timeRange})'
         : item.periodText;
-
-    // Khoá hành động khi đã done/canceled/expired
     final locked = item.status == ScheduleStatus.done ||
         item.status == ScheduleStatus.canceled ||
         effectiveStatus == ScheduleStatus.expired;
-
-    // Hiện/ẩn cụm nút
     final showActions = !locked;
-
-    // DÙNG TRỰC TIẾP extension override, KHÔNG gán vào biến riêng
     final statusColor = ScheduleStatusStyleX(effectiveStatus).color;
     final statusLabel = ScheduleStatusStyleX(effectiveStatus).label;
-
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
@@ -260,7 +237,6 @@ class ScheduleCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // vạch trái
             Container(
               width: 6,
               decoration: BoxDecoration(
@@ -271,8 +247,6 @@ class ScheduleCard extends StatelessWidget {
                 ),
               ),
             ),
-
-            // nội dung
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
@@ -288,7 +262,6 @@ class ScheduleCard extends StatelessWidget {
                       if (statusLabel.isNotEmpty) ScheduleStatusBadge(status: effectiveStatus),
                     ]),
                     const SizedBox(height: 10),
-
                     Text(
                       item.subjectName,
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
@@ -296,7 +269,6 @@ class ScheduleCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(item.classCode, style: const TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
-
                     Row(children: <Widget>[
                       const Icon(Icons.location_on_outlined, size: 16),
                       const SizedBox(width: 4),
@@ -306,7 +278,6 @@ class ScheduleCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(item.type),
                     ]),
-
                     if (item.chapter != null && item.chapter!.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Row(children: <Widget>[
@@ -315,19 +286,14 @@ class ScheduleCard extends StatelessWidget {
                         Expanded(child: Text(item.chapter!)),
                       ]),
                     ],
-
                     const SizedBox(height: 10),
-
-                    // ẨN toàn bộ cụm nút khi locked
                     if (showActions)
                       Row(children: [
-                        // HOÀN THÀNH
                         _chipButton(
                           'Hoàn thành',
                           const Color(0xFF2E7D32),
                           const Color(0xFFE2F3E6),
                               () async {
-                            // 1) Hỏi xác nhận trước
                             final confirm = await _showConfirmDialog(
                               context,
                               title: 'Xác nhận hoàn thành?',
@@ -335,17 +301,14 @@ class ScheduleCard extends StatelessWidget {
                               color: const Color(0xFF2E7D32),
                             );
                             if (!confirm) return;
-                            if (!context.mounted) return; // ✅ sau await
-
-                            // 2) Kiểm tra điều kiện thời gian
+                            if (!context.mounted) return;
                             final (ok, reason, from, to) = _canCompleteNow();
                             if (!ok) {
-                              if (!context.mounted) return; // ✅ trước khi show dialog
+                              if (!context.mounted) return;
                               var msg = reason ?? 'Không thể cập nhật.';
                               if (from != null && to != null) {
                                 msg += '\nCửa sổ cho phép: ${_formatHm(from)} → ${_formatHm(to)}';
                               }
-
                               if (reason?.contains('Chưa đến thời gian') == true) {
                                 await _showCustomDialog(
                                   context,
@@ -385,12 +348,10 @@ class ScheduleCard extends StatelessWidget {
                               }
                               return;
                             }
-
-                            // 3) Hợp lệ → gọi cập nhật
                             if (onMarkDone == null) return;
                             try {
                               await onMarkDone!();
-                              if (!context.mounted) return; // ✅ sau await
+                              if (!context.mounted) return;
                               await _showCustomDialog(
                                 context,
                                 title: 'Thành công',
@@ -400,7 +361,7 @@ class ScheduleCard extends StatelessWidget {
                                 iconColor: const Color(0xFF43A047),
                               );
                             } catch (e) {
-                              if (!context.mounted) return; // ✅
+                              if (!context.mounted) return;
                               await _showCustomDialog(
                                 context,
                                 title: 'Lỗi',
@@ -413,8 +374,6 @@ class ScheduleCard extends StatelessWidget {
                           },
                         ),
                         const SizedBox(width: 10),
-
-                        // NGHỈ DẠY -> mở màn form
                         _chipButton(
                           'Nghỉ dạy',
                           const Color(0xFFF29900),
@@ -431,7 +390,7 @@ class ScheduleCard extends StatelessWidget {
                                 ),
                               ),
                             );
-                            if (!context.mounted) return; // ✅ sau await
+                            if (!context.mounted) return;
                             if (result != null) {
                               await _showCustomDialog(
                                 context,

@@ -3,7 +3,7 @@ import '../../models/teacher_model.dart';
 
 class TeacherInfoCard extends StatelessWidget {
   final TeacherModel teacher;
-  final bool compact; // dùng layout gọn khi đặt trong card tổng quan
+  final bool compact;
   const TeacherInfoCard({super.key, required this.teacher, this.compact = false});
 
   String _getInitials(String fullName) {

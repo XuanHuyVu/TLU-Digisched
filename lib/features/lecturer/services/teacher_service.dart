@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../../core/services/api_service.dart';
+import '../../../services/api_service.dart';
 import '../models/teacher_model.dart';
 import '../models/schedule_model.dart';
 
@@ -53,79 +52,6 @@ class TeacherService {
     if (teacherId == null) {
       throw Exception('Không tìm thấy teacherId. Hãy đăng nhập lại.');
     }
-
-    final mockSchedules = [
-      ScheduleModel(
-        id: 1,
-        teachingDate: DateTime.now(),
-        periodStartRaw: '07:00',
-        periodEndRaw: '07:50',
-        periodStart: 1,
-        periodEnd: 1,
-        type: 'Lý thuyết',
-        subjectName: 'Lập trình Dart',
-        classCode: 'TIN1101',
-        roomName: 'Phòng 101-A',
-        chapter: 'Chương 1: Giới thiệu',
-        status: ScheduleStatus.upcoming,
-      ),
-      ScheduleModel(
-        id: 2,
-        teachingDate: DateTime.now(),
-        periodStartRaw: '08:00',
-        periodEndRaw: '09:40',
-        periodStart: 2,
-        periodEnd: 3,
-        type: 'Thực hành',
-        subjectName: 'Cơ sở dữ liệu',
-        classCode: 'TIN1205',
-        roomName: 'Phòng 205-B',
-        chapter: 'Chương 2: SQL',
-        status: ScheduleStatus.done,
-      ),
-      ScheduleModel(
-        id: 3,
-        teachingDate: DateTime.now().add(const Duration(days: 1)),
-        periodStartRaw: '07:00',
-        periodEndRaw: '07:50',
-        periodStart: 1,
-        periodEnd: 1,
-        type: 'Lý thuyết',
-        subjectName: 'Cấu trúc dữ liệu',
-        classCode: 'TIN1103',
-        roomName: 'Phòng 301-C',
-        chapter: 'Chương 3: Stack & Queue',
-        status: ScheduleStatus.upcoming,
-      ),
-      ScheduleModel(
-        id: 4,
-        teachingDate: DateTime.now().add(const Duration(days: 1)),
-        periodStartRaw: '09:45',
-        periodEndRaw: '11:25',
-        periodStart: 4,
-        periodEnd: 5,
-        type: 'Thực hành',
-        subjectName: 'Lập trình Dart',
-        classCode: 'TIN1101',
-        roomName: 'Phòng 102-A',
-        chapter: 'Chương 2: OOP',
-        status: ScheduleStatus.upcoming,
-      ),
-      ScheduleModel(
-        id: 5,
-        teachingDate: DateTime.now().add(const Duration(days: 2)),
-        periodStartRaw: '13:45',
-        periodEndRaw: '15:25',
-        periodStart: 7,
-        periodEnd: 8,
-        type: 'Lý thuyết',
-        subjectName: 'Phân tích thiết kế',
-        classCode: 'TIN1301',
-        roomName: 'Phòng 401-D',
-        chapter: 'Chương 1: UML',
-        status: ScheduleStatus.upcoming,
-      ),
-    ];
 
     dynamic res;
     try {

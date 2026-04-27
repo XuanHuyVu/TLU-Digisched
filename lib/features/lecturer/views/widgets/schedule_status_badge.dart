@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/schedule_model.dart';
 
-/// Extension đặt tên cố định: ScheduleStatusStyleX
 extension ScheduleStatusStyleX on ScheduleStatus {
   String get label {
     switch (this) {
@@ -20,7 +19,7 @@ extension ScheduleStatusStyleX on ScheduleStatus {
       case ScheduleStatus.ongoing:  return const Color(0xFF2F6BFF);
       case ScheduleStatus.upcoming: return const Color(0xFFFFA726);
       case ScheduleStatus.done:     return const Color(0xFF43A047);
-      case ScheduleStatus.expired:  return const Color(0xFFE53935); // đỏ
+      case ScheduleStatus.expired:  return const Color(0xFFE53935);
       case ScheduleStatus.canceled:
       case ScheduleStatus.unknown:
       return Colors.grey;

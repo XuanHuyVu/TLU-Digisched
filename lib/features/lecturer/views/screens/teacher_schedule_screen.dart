@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../viewmodels/teacher_schedule_viewmodel.dart';
 import '../../models/schedule_model.dart';
 import '../widgets/schedule_card.dart';
 
-/// ---- Config & helpers -------------------------------------------------------
-
 const _brandBlue = Color(0xFF4A90E2);
-
 String _two(int n) => n.toString().padLeft(2, '0');
 String _ddMMyyyy(DateTime d) => '${_two(d.day)}/${_two(d.month)}/${d.year}';
 
@@ -23,8 +19,6 @@ String _weekdayFull(DateTime d) {
 }
 
 DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-
-/// ---- Entry Screen -----------------------------------------------------------
 
 class TeacherScheduleScreen extends StatelessWidget {
   const TeacherScheduleScreen({super.key});
@@ -51,10 +45,7 @@ class _BodyState extends State<_Body> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<TeacherScheduleViewModel>();
-
-    if (vm.loading) {
-      return const SafeArea(child: Center(child: CircularProgressIndicator()));
-    }
+    if (vm.loading) return const SafeArea(child: Center(child: CircularProgressIndicator()));
     if (vm.error != null) {
       return SafeArea(
         child: Center(
@@ -112,8 +103,6 @@ class _BodyState extends State<_Body> with TickerProviderStateMixin {
   }
 }
 
-/// ---- AppBar component -------------------------------------------------------
-
 class _ScheduleAppBar extends StatelessWidget {
   final String title;
   final VoidCallback? onBack;
@@ -168,8 +157,6 @@ class _ScheduleAppBar extends StatelessWidget {
   }
 }
 
-/// ---- Tab: Ngày --------------------------------------------------------------
-
 class _DayTab extends StatelessWidget {
   const _DayTab();
 
@@ -201,7 +188,6 @@ class _DayTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-
         ...vm.daySchedules.map(
               (e) => ScheduleCard(
             item: e,
@@ -225,12 +211,8 @@ class _DayTab extends StatelessWidget {
   }
 }
 
-/// ---- Tab: Tuần --------------------------------------------------------------
-
 class _WeekTab extends StatelessWidget {
   const _WeekTab();
-
-  /// 7 ngày của tuần (T2..CN) chứa [base]
   List<DateTime> _weekFromMonday(DateTime base) {
     final monday = base.subtract(Duration(days: base.weekday - 1));
     return List.generate(7, (i) => _dateOnly(DateTime(monday.year, monday.month, monday.day + i)));
@@ -240,15 +222,12 @@ class _WeekTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = context.watch<TeacherScheduleViewModel>();
     final weekDays = _weekFromMonday(vm.selectedDate);
-
-    // Chuẩn hóa key trong grouped
     final Map<DateTime, List<ScheduleModel>> grouped = {
       for (final e in vm.weekGrouped.entries) _dateOnly(e.key): e.value
     };
 
     return Column(
       children: [
-        // Thanh chọn ngày (full tuần) – không cần cuộn, chia đều 7 cột
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
@@ -265,7 +244,6 @@ class _WeekTab extends StatelessWidget {
                     final isSelected = _dateOnly(day) == _dateOnly(vm.selectedDate);
                     final isToday = _dateOnly(day) == _dateOnly(DateTime.now());
                     final hasSchedules = (grouped[day] ?? const <ScheduleModel>[]).isNotEmpty;
-
                     return Expanded(
                       child: _DayPill(
                         day: day,
@@ -286,8 +264,6 @@ class _WeekTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-
-        // Danh sách lịch học
         Expanded(
           child: _buildScheduleList(context, grouped, weekDays),
         ),
@@ -302,11 +278,8 @@ class _WeekTab extends StatelessWidget {
       ) {
     final vm = context.watch<TeacherScheduleViewModel>();
     final selectedDate = _dateOnly(vm.selectedDate);
-
-    // Những ngày có lịch trong tuần
     final daysWithSchedules =
     weekDays.where((day) => (grouped[day] ?? const <ScheduleModel>[]).isNotEmpty).toList();
-
     if (daysWithSchedules.isEmpty) {
       return Center(
         child: Padding(
@@ -319,7 +292,6 @@ class _WeekTab extends StatelessWidget {
       );
     }
 
-    // Sắp xếp: ngày đang chọn lên đầu nếu có, còn lại tăng dần
     final sortedDays = _sortDaysStartingFromSelected(daysWithSchedules, selectedDate);
 
     return ListView(
@@ -362,7 +334,6 @@ class _WeekTab extends StatelessWidget {
   }
 }
 
-/// Ô chọn ngày (1/7 cột)
 class _DayPill extends StatelessWidget {
   final DateTime day;
   final bool isSelected;

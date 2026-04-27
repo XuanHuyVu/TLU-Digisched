@@ -1,9 +1,7 @@
-import '../../../core/extensions/extensions.dart';
-
-/// Có thêm 'expired' để hiển thị UI
+import 'package:tlu_digisched/shared/extensions/extensions.dart';
+import '../../../core/utils/period_helper.dart';
 enum ScheduleStatus { upcoming, ongoing, done, canceled, expired, unknown }
 
-// ===== Helpers map status <-> API =====
 ScheduleStatus statusFromApi(String? s) {
   switch ((s ?? '').toUpperCase()) {
     case 'DA_DAY':
@@ -46,13 +44,10 @@ String statusToApi(ScheduleStatus s) {
 class ScheduleModel {
   final int id;
   final DateTime? teachingDate;
-
   final String? periodStartRaw;
   final String? periodEndRaw;
-
   final int periodStart;
   final int periodEnd;
-
   final String type;
   final String subjectName;
   final String classCode;
@@ -88,8 +83,7 @@ class ScheduleModel {
     return periodTimeRange(periodStart, periodEnd);
   }
 
-  String get dateText => teachingDate == null ? '' : formatDdMMyyyy(teachingDate!);
-
+  String get dateText => teachingDate?.toDdMMyyyy() ?? '';
   int get periodsCount =>
       (periodStart > 0 && periodEnd >= periodStart) ? (periodEnd - periodStart + 1) : 1;
 
@@ -114,9 +108,6 @@ class ScheduleModel {
     return int.tryParse(v.toString()) ?? 0;
   }
 
-  /// Fallback theo NGÀY nếu API không có:
-  /// - Quá khứ -> expired
-  /// - Hôm nay/tương lai -> upcoming (UI tự quyết ongoing/expired theo giờ)
   static ScheduleStatus _fallbackStatusByDate(DateTime? date) {
     if (date == null) return ScheduleStatus.unknown;
     final now = DateTime.now();
