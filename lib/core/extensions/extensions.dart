@@ -1,8 +1,5 @@
-// lib/core/constants/constants.dart
-
 import '../../features/student/models/student_schedule_model.dart';
 
-/// Tiện ích format ngày YYYY-MM-DD
 extension DateX on DateTime {
   String toYMD() {
     final mm = month.toString().padLeft(2, '0');
@@ -11,8 +8,6 @@ extension DateX on DateTime {
   }
 }
 
-/// Ánh xạ TIẾT -> "HH:mm - HH:mm"
-/// (Bạn chỉnh lại slot 13 nếu trường có khung giờ khác)
 const Map<int, String> tietToTime = {
   1:  "07:00 - 07:50",
   2:  "07:55 - 08:45",
@@ -26,7 +21,7 @@ const Map<int, String> tietToTime = {
   10: "15:40 - 16:30",
   11: "16:35 - 17:25",
   12: "17:30 - 18:20",
-  13: "18:50 - 19:40", // <-- nếu muốn theo bản khác: "18:25 - 19:15"
+  13: "18:50 - 19:40",
   14: "19:45 - 20:35",
   15: "20:40 - 21:30",
 };

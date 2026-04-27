@@ -1,19 +1,17 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:tlu_digisched/core/constants/constants.dart';
 
 class TeacherScheduleService {
-  final String baseUrl;
   final Future<Map<String, String>> Function()? authHeaders;
 
   TeacherScheduleService({
-    this.baseUrl = 'http://10.0.2.2:8080',
     this.authHeaders,
   });
 
-  /// Đánh dấu điểm danh (Hoàn thành)
   Future<Map<String, dynamic>> markAsDone(int scheduleDetailId) async {
     final url = Uri.parse(
-      '$baseUrl/api/teacher/teaching-schedule-details/$scheduleDetailId/attendance',
+      '${Constants.baseUrl}/api/teacher/teaching-schedule-details/$scheduleDetailId/attendance',
     );
 
     final headers = <String, String>{
@@ -37,7 +35,7 @@ class TeacherScheduleService {
     required String reason,
     String? fileUrl,
   }) async {
-    final url = Uri.parse('$baseUrl/api/teacher/class-cancel');
+    final url = Uri.parse('${Constants.baseUrl}/api/teacher/class-cancel');
 
     final headers = <String, String>{
       'Content-Type': 'application/json',

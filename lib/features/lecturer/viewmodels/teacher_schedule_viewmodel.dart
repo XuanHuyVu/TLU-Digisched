@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
-
+import '../../../core/extensions/extensions.dart';
 import '../models/schedule_model.dart';
 import '../services/teacher_service.dart';
 import '../services/teacher_schedule_service.dart';
 import '../../auth/services/auth_service.dart';
-
-// constants: tietToTime, format helpers...
-import '../../../core/constants/constants.dart';
-// local notifications
-import '../../../core/notification/notification_service.dart';
 
 class TeacherScheduleViewModel extends ChangeNotifier {
   final _service = TeacherService();
@@ -64,7 +59,7 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     return _dateWithHHmm(d, range.$2);
   }
 
-  // ---------- LOAD + ĐẶT NHẮC ----------
+  // ---------- LOAD ----------
   Future<void> load() async {
     loading = true;
     error = null;
@@ -72,37 +67,8 @@ class TeacherScheduleViewModel extends ChangeNotifier {
 
     try {
       all = await _service.fetchAllSchedules();
+      // Sắp xếp theo tiết bắt đầu
       all = [...all]..sort((a, b) => a.periodStart.compareTo(b.periodStart));
-
-      // Đặt nhắc: 15' trước bắt đầu & 30' trước kết thúc
-      for (final s in all) {
-        final int id = s.id; // giả định non-null
-        if (id == 0) continue; // bỏ record lỗi nếu có
-
-        final start = startDateTimeOf(s);
-        if (start != null) {
-          await AppNotificationService.I.scheduleReminderBefore(
-            scheduleId: id,
-            title: 'Sắp đến giờ dạy',
-            body:
-            '${s.subjectName} - Phòng ${s.roomName} bắt đầu lúc ${_hhmm(start)}',
-            classStartLocal: start,
-            before: const Duration(minutes: 15),
-          );
-        }
-
-        final end = endDateTimeOf(s);
-        if (end != null) {
-          await AppNotificationService.I.scheduleReminderBefore(
-            scheduleId: id + 50000,
-            title: 'Chuẩn bị hoàn thành',
-            body:
-            'Buổi ${s.subjectName} sắp kết thúc, bạn có thể bấm Hoàn thành sau giờ học.',
-            classStartLocal: end,
-            before: const Duration(minutes: 30),
-          );
-        }
-      }
     } catch (e) {
       error = e.toString();
     } finally {
@@ -120,12 +86,14 @@ class TeacherScheduleViewModel extends ChangeNotifier {
           d.month == selectedDate.month &&
           d.day == selectedDate.day;
     }).toList();
+
     list.sort((a, b) => a.periodStart.compareTo(b.periodStart));
     return list;
   }
 
   Map<DateTime, List<ScheduleModel>> get weekGrouped {
     if (all.isEmpty) return {};
+
     final monday = selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
     final sunday = monday.add(const Duration(days: 6));
 
@@ -139,11 +107,12 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     for (final s in all) {
       final d = s.teachingDate;
       if (d == null || !inWeek(d)) continue;
+
       final key = DateTime(d.year, d.month, d.day);
       (map[key] ??= []).add(s);
     }
 
-    // sort list cho từng ngày (tránh dùng !)
+    // Sắp xếp theo tiết trong từng ngày
     for (final list in map.values) {
       list.sort((a, b) => a.periodStart.compareTo(b.periodStart));
     }
@@ -180,66 +149,48 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Hiện tại chỉ cập nhật UI (mock)
+      debugPrint('✓ markDone(${item.id}) - mock, không gọi API');
+
+      /*
+      // Nếu sau này muốn gọi API thật thì mở phần này:
       final res = await _scheduleService.markAsDone(item.id);
       final st = statusFromApi(res['status'] as String?);
       if (st != ScheduleStatus.unknown) {
         all[idx] = prev.copyWith(status: st);
         notifyListeners();
       }
-
-      // Huỷ 2 nhắc của buổi này
-      final int id = item.id; // non-null
-      await AppNotificationService.I.cancel(id);
-      await AppNotificationService.I.cancel(id + 50000);
-
-      // Thông báo ngay “đã hoàn thành”
-      final start = startDateTimeOf(item);
-      await AppNotificationService.I.showNow(
-        title: 'Đã hoàn thành buổi dạy',
-        body:
-        '${item.subjectName} (${_dateVN(start)} ${_hhmm(start)}) đã được đánh dấu hoàn thành.',
-        id: id + 100000,
-      );
+      */
     } catch (e) {
+      // Rollback nếu lỗi
       all[idx] = prev;
       notifyListeners();
       rethrow;
     }
   }
 
-  /// Gửi yêu cầu NGHỈ DẠY (cancel buổi học)
+  /// Gửi yêu cầu NGHỈ DẠY
   Future<Map<String, dynamic>> requestCancel(
       ScheduleModel item, {
         required String reason,
         String? fileUrl,
       }) async {
-    final int id = item.id; // non-null
+    debugPrint('✓ requestCancel(${item.id}) - mock, không gọi API');
+    return {'status': 'success', 'message': 'Yêu cầu nghỉ dạy được ghi nhận'};
+
+    /*
+    // API thật khi cần:
     final res = await _scheduleService.requestClassCancel(
-      detailId: id,
+      detailId: item.id,
       reason: reason,
       fileUrl: fileUrl,
     );
     return res;
+    */
   }
 
-  /// Huỷ tất cả thông báo cũ rồi load + đặt lại (tránh trùng khi refresh)
+  /// Load lại dữ liệu (không còn noti)
   Future<void> reload() async {
-    try {
-      await AppNotificationService.I.cancelAll();
-    } catch (_) {}
     await load();
-  }
-
-  // ---------- Format helpers ----------
-  String _hhmm(DateTime? dt) {
-    if (dt == null) return '';
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '$h:$m';
-  }
-
-  String _dateVN(DateTime? dt) {
-    if (dt == null) return '';
-    return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
   }
 }

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../../student/views/screens/schedule_screen.dart';
-import '../../teacher/views/screens/teacher_home_screen.dart';
+import '../../lecturer/views/screens/teacher_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,15 +35,15 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       final auth = context.read<AuthViewModel>();
-      final rawRole = (auth.user?.role ?? '').toString();
-      final role = rawRole.trim().toUpperCase();
+      final role = (auth.user?.role ?? '').trim().toUpperCase();
 
-      final Widget target =
-      role.contains('TEACHER') ? const TeacherHomeScreen() : const ScheduleScreen();
+      final Widget target = role == 'LECTURER'
+        ? const TeacherHomeScreen()
+        : const ScheduleScreen();
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => target),
-            (route) => false,
+        (route) => false,
       );
     } catch (e) {
       setState(() => _error = 'Sai tài khoản hoặc mật khẩu');
@@ -227,10 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 32),
-
-                // Error Message
                 if (_error != null)
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
@@ -256,8 +253,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-
-                // Login Button
                 Container(
                   width: 200,
                   height: 50,
@@ -282,8 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         disabledBackgroundColor: Colors.grey[300],
                       ),
-                      child: _loading
-                          ? const SizedBox(
+                      child: _loading ? const SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
@@ -291,9 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           valueColor:
                           AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
-                      )
-                          : const Text(
-                        'Đăng nhập',
+                      ) : const Text('Đăng nhập',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
