@@ -3,33 +3,18 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tlu_digisched/core/constants/constants.dart';
-
+import 'package:tlu_digisched/config/constants/api_endpoints.dart';
+import 'package:tlu_digisched/config/constants/constants.dart';
 import '../models/teacher_stat_model.dart';
 
 class TeacherStatService {
   final http.Client _client;
-
   TeacherStatService({http.Client? client}) : _client = client ?? http.Client();
 
-  /// Prepare headers with token
   static Future<Map<String, String>> _headers() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token')?.trim();
-
-    if (kDebugMode) {
-      print('🔍 Đang lấy token cho yêu cầu stats:');
-      print('   - Token tồn tại: ${token != null}');
-      print('   - Độ dài token: ${token?.length ?? 0}');
-      if (token != null && token.length > 20) {
-        print('   - 20 ký tự đầu: ${token.substring(0, 20)}...');
-      }
-    }
-
-    if (token == null) {
-      throw Exception('Không tìm thấy token, vui lòng đăng nhập lại');
-    }
-
+    final token = prefs.getString(Constants.token)?.trim();
+    if (token == null) throw Exception('Không tìm thấy token, vui lòng đăng nhập lại');
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -40,29 +25,12 @@ class TeacherStatService {
   Future<List<TeacherStat>> getStats() async {
     try {
       final headers = await _headers();
-      final uri = Uri.parse('${Constants.baseUrl}/api/teacher/stats/me');
-
-      if (kDebugMode) {
-        print('📡 Gửi yêu cầu stats tới: $uri');
-        print('📋 Headers: $headers');
-      }
-
+      final uri = Uri.parse(ApiEndpoints.teacherStats);
       final response = await _client
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 15));
-
-      if (kDebugMode) {
-        print('📨 Trạng thái response: ${response.statusCode}');
-        print('📦 Nội dung response: ${response.body}');
-      }
-
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-
-        if (kDebugMode) {
-          print('✅ Tải thống kê thành công: ${data.length} bản ghi');
-        }
-
         return data.map((json) => TeacherStat.fromJson(json)).toList();
       } else {
         String errorMessage = 'Không thể tải thống kê: ${response.statusCode}';
@@ -99,7 +67,6 @@ class TeacherStatService {
     }
   }
 
-  /// Dispose client if needed
   void dispose() {
     _client.close();
   }

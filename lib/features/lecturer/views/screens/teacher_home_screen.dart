@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:tlu_digisched/shared/extensions/date_extensions.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
 import 'teacher_profile_screen.dart';
 import 'teacher_notification_screen.dart';
 import '../../viewmodels/teacher_home_viewmodel.dart';
 import '../../viewmodels/teacher_schedule_viewmodel.dart';
 import '../../models/schedule_model.dart';
-import '../../../../core/constants/constants.dart';
 import '../widgets/schedule_card.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/stats_panel.dart';
@@ -23,14 +23,16 @@ class TeacherHomeScreen extends StatefulWidget {
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _index = 0;
 
-  // Khởi tạo VM 1 lần, tránh tạo lại khi setState đổi tab
   late final TeacherHomeViewModel _homeVM;
   late final TeacherScheduleViewModel _scheduleVM;
 
   @override
   void initState() {
     super.initState();
-    _homeVM = TeacherHomeViewModel()..load();
+    final authNotifier = context.read<AuthNotifier>();
+    _homeVM = TeacherHomeViewModel(
+      getTokenUseCase: authNotifier.getTokenUseCase,
+    )..load();
     _scheduleVM = TeacherScheduleViewModel()..load();
   }
 
@@ -60,7 +62,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   }
 }
 
-/// Trang chủ (dashboard)
 class _HomeTab extends StatelessWidget {
   final VoidCallback onSeeAll;
   const _HomeTab({required this.onSeeAll});
@@ -76,8 +77,9 @@ class _HomeTab extends StatelessWidget {
       return SafeArea(child: Center(child: Text('Lỗi: ${vm.error}')));
     }
 
-    final todayStr = formatDdMMyyyy(DateTime.now());
-    final displayName = vm.teacherName.isNotEmpty ? vm.teacherName : 'Giảng viên';
+    final todayStr = DateTime.now().toDdMMyyyy();
+    final displayName =
+        vm.teacherName.isNotEmpty ? vm.teacherName : 'Giảng viên';
 
     return SafeArea(
       child: ListView(
@@ -97,31 +99,38 @@ class _HomeTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(children: [
-                const Text('Lịch dạy hôm nay',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(6),
+              Row(
+                children: [
+                  const Text(
+                    'Lịch dạy hôm nay',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
-                  child: Text(
-                    todayStr,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue,
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      todayStr,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue,
+                      ),
                     ),
                   ),
-                ),
-              ]),
+                ],
+              ),
             ],
           ),
 
           ...vm.todaySchedules.map(
-                (e) => ScheduleCard(
+            (e) => ScheduleCard(
               item: e,
               onMarkDone: () async {
                 final schedVM = context.read<TeacherScheduleViewModel>();
@@ -158,8 +167,7 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<TeacherHomeViewModel>();
-    final unread = vm.unreadCount; // Thuộc tính thêm trong ViewModel
-
+    final unread = vm.unreadCount;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
@@ -177,24 +185,30 @@ class _TopBar extends StatelessWidget {
                     ),
                   );
                 },
-                icon: const Icon(Icons.notifications_rounded, size: 30), // chuông to hơn
+                icon: const Icon(
+                  Icons.notifications_rounded,
+                  size: 30,
+                ),
               ),
               if (unread > 0)
                 Positioned(
                   right: 8,
                   top: 8,
                   child: Container(
-                    padding: const EdgeInsets.all(2), // nhỏ hơn
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                    constraints: const BoxConstraints(
+                      minWidth: 14,
+                      minHeight: 14,
+                    ),
                     child: Text(
                       '$unread',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 9, // chữ nhỏ hơn
+                        fontSize: 9,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
@@ -208,7 +222,10 @@ class _TopBar extends StatelessWidget {
             backgroundColor: const Color(0xFF2F6BFF),
             child: Text(
               _getInitials(name),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -219,12 +236,14 @@ class _TopBar extends StatelessWidget {
 
 class _StatsTab extends StatelessWidget {
   const _StatsTab();
+
   @override
   Widget build(BuildContext context) => const TeacherStatScreen();
 }
 
 class _ProfileTab extends StatelessWidget {
   const _ProfileTab();
+
   @override
   Widget build(BuildContext context) => const TeacherProfileScreen();
 }

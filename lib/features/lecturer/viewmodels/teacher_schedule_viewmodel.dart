@@ -1,27 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../core/extensions/extensions.dart';
+import 'package:tlu_digisched/config/constants/constants.dart';
 import '../models/schedule_model.dart';
 import '../services/teacher_service.dart';
-import '../services/teacher_schedule_service.dart';
-import '../../auth/services/auth_service.dart';
 
 class TeacherScheduleViewModel extends ChangeNotifier {
   final _service = TeacherService();
-
-  final TeacherScheduleService _scheduleService = TeacherScheduleService(
-    authHeaders: () async {
-      final t = await AuthService.getToken();
-      return t == null ? <String, String>{} : {'Authorization': 'Bearer $t'};
-    },
-  );
-
   bool loading = false;
   String? error;
-
   DateTime selectedDate = DateTime.now();
   List<ScheduleModel> all = const [];
 
-  // ---------- Helpers "HH:mm" -> DateTime ----------
   DateTime? _dateWithHHmm(DateTime dateOnly, String hhmm) {
     final parts = hhmm.split(':');
     if (parts.length != 2) return null;
@@ -31,17 +19,15 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     return DateTime(dateOnly.year, dateOnly.month, dateOnly.day, h, m);
   }
 
-  /// Lấy "HH:mm - HH:mm" theo tiết bắt đầu/kết thúc
   (String, String)? _rangeHHmmByPeriod(int startPeriod, int endPeriod) {
-    final s = tietToTime[startPeriod];
-    final e = tietToTime[endPeriod];
+    final s = Constants.timeOfPeriod[startPeriod];
+    final e = Constants.timeOfPeriod[endPeriod];
     if (s == null || e == null) return null;
     final startHHmm = s.split('-').first.trim();
     final endHHmm = e.split('-').last.trim();
     return (startHHmm, endHHmm);
   }
 
-  /// Thời điểm bắt đầu buổi học (local)
   DateTime? startDateTimeOf(ScheduleModel s) {
     final d = s.teachingDate;
     if (d == null) return null;
@@ -50,7 +36,6 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     return _dateWithHHmm(d, range.$1);
   }
 
-  /// Thời điểm kết thúc buổi học (local)
   DateTime? endDateTimeOf(ScheduleModel s) {
     final d = s.teachingDate;
     if (d == null) return null;
@@ -59,7 +44,6 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     return _dateWithHHmm(d, range.$2);
   }
 
-  // ---------- LOAD ----------
   Future<void> load() async {
     loading = true;
     error = null;
@@ -67,7 +51,6 @@ class TeacherScheduleViewModel extends ChangeNotifier {
 
     try {
       all = await _service.fetchAllSchedules();
-      // Sắp xếp theo tiết bắt đầu
       all = [...all]..sort((a, b) => a.periodStart.compareTo(b.periodStart));
     } catch (e) {
       error = e.toString();
@@ -77,7 +60,6 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     }
   }
 
-  // ---------- VIEW HELPERS ----------
   List<ScheduleModel> get daySchedules {
     final list = all.where((s) {
       final d = s.teachingDate;
@@ -112,7 +94,6 @@ class TeacherScheduleViewModel extends ChangeNotifier {
       (map[key] ??= []).add(s);
     }
 
-    // Sắp xếp theo tiết trong từng ngày
     for (final list in map.values) {
       list.sort((a, b) => a.periodStart.compareTo(b.periodStart));
     }
@@ -139,7 +120,6 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     }
   }
 
-  // ---------- ĐÁNH DẤU HOÀN THÀNH ----------
   Future<void> markDone(ScheduleModel item) async {
     final idx = all.indexWhere((e) => e.id == item.id);
     if (idx == -1) return;
@@ -149,7 +129,6 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Hiện tại chỉ cập nhật UI (mock)
       debugPrint('✓ markDone(${item.id}) - mock, không gọi API');
 
       /*
@@ -162,14 +141,12 @@ class TeacherScheduleViewModel extends ChangeNotifier {
       }
       */
     } catch (e) {
-      // Rollback nếu lỗi
       all[idx] = prev;
       notifyListeners();
       rethrow;
     }
   }
 
-  /// Gửi yêu cầu NGHỈ DẠY
   Future<Map<String, dynamic>> requestCancel(
       ScheduleModel item, {
         required String reason,
@@ -189,7 +166,6 @@ class TeacherScheduleViewModel extends ChangeNotifier {
     */
   }
 
-  /// Load lại dữ liệu (không còn noti)
   Future<void> reload() async {
     await load();
   }

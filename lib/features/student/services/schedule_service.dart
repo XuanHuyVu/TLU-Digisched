@@ -1,5 +1,5 @@
 import 'dart:async';
-import '../../../core/services/api_service.dart';
+import '../../../services/api_service.dart';
 import '../models/student_schedule_model.dart';
 
 class ScheduleService {

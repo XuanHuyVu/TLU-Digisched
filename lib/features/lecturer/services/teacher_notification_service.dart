@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tlu_digisched/core/constants/constants.dart';
+import 'package:tlu_digisched/config/constants/api_endpoints.dart';
 import 'package:tlu_digisched/features/lecturer/models/teacher_notification_model.dart';
 
 class TeacherNotificationService {
@@ -16,9 +16,8 @@ class TeacherNotificationService {
       throw Exception('Không tìm thấy token. Vui lòng đăng nhập lại.');
     }
 
-    final uri = Uri.parse('${Constants.baseUrl}/api/teacher/notifications');
-    final response = await http.get(
-      uri,
+    final uri = Uri.parse(ApiEndpoints.teacherNotifications);
+    final response = await http.get(uri,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -27,12 +26,9 @@ class TeacherNotificationService {
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = jsonDecode(utf8.decode(response.bodyBytes));
-      return jsonList
-          .map((json) => TeacherNotification.fromJson(json))
-          .toList();
+      return jsonList.map((json) => TeacherNotification.fromJson(json)).toList();
     } else {
-      throw Exception(
-          'Lỗi tải thông báo: ${response.statusCode} - ${response.body}');
+      throw Exception('Lỗi tải thông báo: ${response.statusCode} - ${response.body}');
     }
   }
 
@@ -42,8 +38,7 @@ class TeacherNotificationService {
       throw Exception('Không tìm thấy token. Vui lòng đăng nhập lại.');
     }
 
-    final uri =
-    Uri.parse('${Constants.baseUrl}/api/teacher/notifications/read/$notificationId');
+    final uri = Uri.parse('${ApiEndpoints.teacherNotificationsRead}$notificationId');
     final response = await http.put(
       uri,
       headers: {
@@ -51,10 +46,8 @@ class TeacherNotificationService {
         'Authorization': 'Bearer $token',
       },
     );
-
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception(
-          'Đánh dấu đã đọc thất bại: ${response.statusCode} - ${response.body}');
+      throw Exception('Đánh dấu đã đọc thất bại: ${response.statusCode} - ${response.body}');
     }
   }
 }

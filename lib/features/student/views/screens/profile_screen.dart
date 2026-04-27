@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../services/avatar_service_mobile.dart';
 import '../../models/profile_model.dart';
 import '../../services/profile_service.dart';
-import 'package:tlu_digisched/core/services/avatar_service.dart';
 import 'package:tlu_digisched/shared/widgets/settings_section.dart';
 
 class ProfileScreen extends StatefulWidget {

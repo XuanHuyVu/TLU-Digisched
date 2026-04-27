@@ -115,8 +115,6 @@ class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
   }
 }
 
-// ====================== NOTIFICATION LIST ======================
-
 class TeacherNotificationList extends StatefulWidget {
   final List<TeacherNotification> notifications;
   final TeacherNotificationService notificationService;
@@ -217,7 +215,6 @@ class _TeacherNotificationListState extends State<TeacherNotificationList> {
         "${dateTime.minute.toString().padLeft(2, '0')}";
   }
 
-  // ==================== XỬ LÝ MENU (ĐÃ SỬA) ====================
   void _handleMenuAction(BuildContext context, String value, TeacherNotification notification) {
     switch (value) {
       case 'delete':
@@ -246,7 +243,6 @@ class _TeacherNotificationListState extends State<TeacherNotificationList> {
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              // Xóa thật sự (bạn nên gọi API xóa ở đây)
               widget.refreshParent();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -264,24 +260,17 @@ class _TeacherNotificationListState extends State<TeacherNotificationList> {
   Future<void> _markAsRead(TeacherNotification notification) async {
     try {
       await widget.notificationService.markAsRead(notification.id);
-
       if (!mounted) return;
-
       setState(() {
         final i = data.indexWhere((e) => e.id == notification.id);
-        if (i != -1) {
-          data[i] = data[i].copyWith(isRead: true);
-        }
+        if (i != -1) data[i] = data[i].copyWith(isRead: true);
       });
-
       widget.refreshParent();
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đã đánh dấu là đã đọc')),
       );
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: $e')),
       );
@@ -290,7 +279,6 @@ class _TeacherNotificationListState extends State<TeacherNotificationList> {
 
   void _markAsUnread(TeacherNotification notification) {
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Chức năng đánh dấu chưa đọc đang phát triển')),
     );

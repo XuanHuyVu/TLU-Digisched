@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:tlu_digisched/core/constants/constants.dart';
+import '../../../config/constants/api_endpoints.dart';
 
 class TeacherScheduleService {
   final Future<Map<String, String>> Function()? authHeaders;
@@ -10,10 +10,7 @@ class TeacherScheduleService {
   });
 
   Future<Map<String, dynamic>> markAsDone(int scheduleDetailId) async {
-    final url = Uri.parse(
-      '${Constants.baseUrl}/api/teacher/teaching-schedule-details/$scheduleDetailId/attendance',
-    );
-
+    final url = Uri.parse('${ApiEndpoints.teacherScheduleDetails}$scheduleDetailId/attendance',);
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -21,22 +18,18 @@ class TeacherScheduleService {
     };
 
     final res = await http.put(url, headers: headers, body: jsonEncode({}));
-    // ignore: avoid_print
-    print('[PUT] $url -> ${res.statusCode} ${res.body}');
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return res.body.isEmpty ? <String, dynamic>{} : json.decode(res.body);
     }
     throw Exception('HTTP ${res.statusCode}: ${res.body}');
   }
 
-  /// Gửi yêu cầu NGHỈ DẠY
   Future<Map<String, dynamic>> requestClassCancel({
     required int detailId,
     required String reason,
     String? fileUrl,
   }) async {
-    final url = Uri.parse('${Constants.baseUrl}/api/teacher/class-cancel');
-
+    final url = Uri.parse(ApiEndpoints.teacherClassCancel);
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -50,8 +43,6 @@ class TeacherScheduleService {
     });
 
     final res = await http.post(url, headers: headers, body: body);
-    // ignore: avoid_print
-    print('[POST] $url -> ${res.statusCode} ${res.body}');
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return res.body.isEmpty ? <String, dynamic>{} : json.decode(res.body);
     }

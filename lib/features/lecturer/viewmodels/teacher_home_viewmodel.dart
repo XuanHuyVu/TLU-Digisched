@@ -1,62 +1,56 @@
 import 'package:flutter/foundation.dart';
+import '../../auth/domain/usecases/get_token_usecase.dart';
 import '../models/schedule_model.dart';
 import '../services/teacher_service.dart';
 import '../services/teacher_schedule_service.dart';
-import '../../auth/services/auth_service.dart';
 import '../models/teacher_notification_model.dart';
 import '../services/teacher_notification_service.dart';
 
 class TeacherHomeViewModel extends ChangeNotifier {
   final _service = TeacherService();
+  final GetTokenUseCase getTokenUseCase;
 
-  final TeacherScheduleService _scheduleService = TeacherScheduleService(
-    authHeaders: () async {
-      final t = await AuthService.getToken();
-      if (kDebugMode) {
-        debugPrint('🔑 Using token (len=${t?.length ?? 0}): '
-            '${t == null ? "null" : t.substring(0, t.length > 12 ? 12 : t.length)}...');
-      }
-      return t == null ? <String, String>{} : {'Authorization': 'Bearer $t'};
-    },
-  );
+  late TeacherScheduleService _scheduleService;
 
-  // ----------------- State -----------------
+  TeacherHomeViewModel({required this.getTokenUseCase}) {
+    _scheduleService = TeacherScheduleService(authHeaders: _getAuthHeaders);
+  }
+
+  // ✅ Method to get auth headers
+  Future<Map<String, String>> _getAuthHeaders() async {
+    final token = await getTokenUseCase();
+    return token == null
+        ? <String, String>{}
+        : {'Authorization': 'Bearer $token'};
+  }
+
   bool loading = false;
   String? error;
-
   int? teacherId;
   String teacherName = '';
   String faculty = '';
-
   int periodsToday = 0;
   int periodsThisWeek = 0;
   int percentCompleted = 0;
-
   List<ScheduleModel> todaySchedules = const [];
-
-  // ----------------- Stats (local for today) -----------------
   int get totalTodaySessions => todaySchedules.length;
   int get completedTodaySessions =>
       todaySchedules.where((s) => s.status == ScheduleStatus.done).length;
   int get percentTodayCompleted =>
-      totalTodaySessions == 0 ? 0 : ((completedTodaySessions * 100) / totalTodaySessions).round();
-
-  // ----------------- NEW: Notification -----------------
-  final TeacherNotificationService _notificationService = TeacherNotificationService();
-
+      totalTodaySessions == 0
+          ? 0
+          : ((completedTodaySessions * 100) / totalTodaySessions).round();
+  final TeacherNotificationService _notificationService =
+      TeacherNotificationService();
   int _unreadCount = 0;
   int get unreadCount => _unreadCount;
-
   Future<void> refreshUnreadCount() async {
     try {
-      final List<TeacherNotification> list = await _notificationService.fetchNotifications();
+      final List<TeacherNotification> list =
+          await _notificationService.fetchNotifications();
       _unreadCount = list.where((n) => !n.isRead).length;
       notifyListeners();
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ refreshUnreadCount error: $e');
-      }
-      // Không gây crash, chỉ set về 0
       _unreadCount = 0;
       notifyListeners();
     }
@@ -131,10 +125,10 @@ class TeacherHomeViewModel extends ChangeNotifier {
 
   /// Gửi yêu cầu NGHỈ DẠY
   Future<Map<String, dynamic>> requestCancel(
-      ScheduleModel item, {
-        required String reason,
-        String? fileUrl,
-      }) async {
+    ScheduleModel item, {
+    required String reason,
+    String? fileUrl,
+  }) async {
     if (item.id == 0) throw Exception('Thiếu detailId để gửi nghỉ dạy');
     final res = await _scheduleService.requestClassCancel(
       detailId: item.id,

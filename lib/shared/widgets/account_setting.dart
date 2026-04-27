@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:tlu_digisched/features/auth/viewmodels/auth_viewmodel.dart';
+import 'package:tlu_digisched/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'logout_dialog.dart';
 
 class AccountSettingsScreen extends StatelessWidget {
@@ -11,13 +11,15 @@ class AccountSettingsScreen extends StatelessWidget {
     final shouldLogout = await showLogoutConfirmationDialog(context);
     if (!shouldLogout) return;
     if (!context.mounted) return;
-    final authViewModel = context.read<AuthViewModel>();
+    final authNotifier = context.read<AuthNotifier>();
 
     try {
-      await authViewModel.logout();
+      await authNotifier.logout();
       if (!context.mounted) return;
       if (context.mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
       }
     } catch (e) {
       if (!context.mounted) return;
@@ -98,10 +100,7 @@ class AccountSettingsScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Text(
               label,
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
+              style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
             ),
           ],
         ),

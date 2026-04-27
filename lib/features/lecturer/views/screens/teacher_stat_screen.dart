@@ -14,7 +14,6 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
 
   String selectedSemester = "2";
   String selectedYear = "2024-2025";
-
   final List<String> semesters = ["1", "2", "3"];
   final List<String> years = ["2023-2024", "2024-2025", "2025-2026"];
 
@@ -42,11 +41,9 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
           final completionRate =
           ((stat.taughtHours + stat.makeUpHours) / stat.totalHours * 100)
               .toStringAsFixed(0);
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔹 Header dính sát trên cùng
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -69,7 +66,6 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 🔹 Bộ lọc học kỳ & năm học
                       Row(
                         children: [
                           const Text("Chọn học kỳ thống kê: "),
@@ -108,8 +104,6 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-
-                      // 🔹 Card thống kê
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(

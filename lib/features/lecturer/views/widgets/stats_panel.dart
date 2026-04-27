@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 
 class StatsPanel extends StatelessWidget {
-  // Giữ nguyên API cũ
   final int periodsToday;
   final int periodsThisWeek;
   final int percentCompleted;
-
-  // Bổ sung (tùy chọn): để hiện "đã hoàn thành / tổng"
   final int? completedToday;
   final int? totalToday;
   final int? completedWeek;
@@ -86,7 +83,6 @@ class StatsPanel extends StatelessWidget {
 
     return Row(
       children: [
-        // Ô 1: Hôm nay
         _tile(
           title: 'Tiết hôm nay',
           value: '$periodsToday',
@@ -95,7 +91,6 @@ class StatsPanel extends StatelessWidget {
               : null,
         ),
 
-        // Ô 2: Tuần này
         _tile(
           title: 'Tiết tuần này',
           value: '$periodsThisWeek',
@@ -104,10 +99,8 @@ class StatsPanel extends StatelessWidget {
               : null,
         ),
 
-        // Ô 3: Hoàn thành
         _tile(
           title: 'Hoàn thành',
-          // Nếu có số liệu tuần X/Y thì ưu tiên hiển thị X/Y, nếu không dùng % cũ
           value: (completedWeek != null && totalWeek != null)
               ? '$completedWeek/$totalWeek'
               : '$percentCompleted%',

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tlu_digisched/core/constants/constants.dart';
+import '../../../config/constants/api_endpoints.dart';
 import '../models/teacher_profile_model.dart';
 
 class TeacherProfileService {
@@ -36,7 +36,7 @@ class TeacherProfileService {
   Future<TeacherProfile> getProfile() async {
     try {
       final headers = await _headers();
-      final uri = Uri.parse('${Constants.baseUrl}/api/teacher/profile');
+      final uri = Uri.parse(ApiEndpoints.teacherProfile);
 
       if (kDebugMode) {
         print('📡 Gửi yêu cầu profile tới: $uri');

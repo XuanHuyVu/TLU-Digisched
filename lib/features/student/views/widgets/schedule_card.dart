@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tlu_digisched/core/extensions/extensions.dart';
+import 'package:tlu_digisched/shared/extensions/extensions.dart';
 import '../../models/student_schedule_model.dart';
 
 class ScheduleCard extends StatelessWidget {
