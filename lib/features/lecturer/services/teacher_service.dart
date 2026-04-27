@@ -54,6 +54,79 @@ class TeacherService {
       throw Exception('Không tìm thấy teacherId. Hãy đăng nhập lại.');
     }
 
+    final mockSchedules = [
+      ScheduleModel(
+        id: 1,
+        teachingDate: DateTime.now(),
+        periodStartRaw: '07:00',
+        periodEndRaw: '07:50',
+        periodStart: 1,
+        periodEnd: 1,
+        type: 'Lý thuyết',
+        subjectName: 'Lập trình Dart',
+        classCode: 'TIN1101',
+        roomName: 'Phòng 101-A',
+        chapter: 'Chương 1: Giới thiệu',
+        status: ScheduleStatus.upcoming,
+      ),
+      ScheduleModel(
+        id: 2,
+        teachingDate: DateTime.now(),
+        periodStartRaw: '08:00',
+        periodEndRaw: '09:40',
+        periodStart: 2,
+        periodEnd: 3,
+        type: 'Thực hành',
+        subjectName: 'Cơ sở dữ liệu',
+        classCode: 'TIN1205',
+        roomName: 'Phòng 205-B',
+        chapter: 'Chương 2: SQL',
+        status: ScheduleStatus.done,
+      ),
+      ScheduleModel(
+        id: 3,
+        teachingDate: DateTime.now().add(const Duration(days: 1)),
+        periodStartRaw: '07:00',
+        periodEndRaw: '07:50',
+        periodStart: 1,
+        periodEnd: 1,
+        type: 'Lý thuyết',
+        subjectName: 'Cấu trúc dữ liệu',
+        classCode: 'TIN1103',
+        roomName: 'Phòng 301-C',
+        chapter: 'Chương 3: Stack & Queue',
+        status: ScheduleStatus.upcoming,
+      ),
+      ScheduleModel(
+        id: 4,
+        teachingDate: DateTime.now().add(const Duration(days: 1)),
+        periodStartRaw: '09:45',
+        periodEndRaw: '11:25',
+        periodStart: 4,
+        periodEnd: 5,
+        type: 'Thực hành',
+        subjectName: 'Lập trình Dart',
+        classCode: 'TIN1101',
+        roomName: 'Phòng 102-A',
+        chapter: 'Chương 2: OOP',
+        status: ScheduleStatus.upcoming,
+      ),
+      ScheduleModel(
+        id: 5,
+        teachingDate: DateTime.now().add(const Duration(days: 2)),
+        periodStartRaw: '13:45',
+        periodEndRaw: '15:25',
+        periodStart: 7,
+        periodEnd: 8,
+        type: 'Lý thuyết',
+        subjectName: 'Phân tích thiết kế',
+        classCode: 'TIN1301',
+        roomName: 'Phòng 401-D',
+        chapter: 'Chương 1: UML',
+        status: ScheduleStatus.upcoming,
+      ),
+    ];
+
     dynamic res;
     try {
       res = await ApiService.getJson('/api/teacher/schedules/$teacherId');
@@ -101,13 +174,7 @@ class TeacherService {
 
     final name = await _getFullName() ?? 'Giảng viên';
 
-    String faculty = '';
-    if (root.isNotEmpty && root.first is Map<String, dynamic>) {
-      final sec = (root.first as Map<String, dynamic>)['classSection'] as Map<String, dynamic>?;
-      faculty = (sec?['faculty']?['name'])?.toString() ?? '';
-    }
-
-    final teacher = TeacherModel(id: teacherId, name: name, faculty: faculty);
+    final teacher = TeacherModel(id: teacherId, name: name, faculty: 'Khoa Công nghệ Thông tin');
 
     return TeacherHomeData(
       teacher: teacher,
@@ -125,6 +192,81 @@ class TeacherService {
       throw Exception('Không tìm thấy teacherId. Hãy đăng nhập lại.');
     }
 
+    // ============ MOCK DATA ============
+    final mockSchedules = [
+      ScheduleModel(
+        id: 1,
+        teachingDate: DateTime.now(),
+        periodStartRaw: '07:00',
+        periodEndRaw: '07:50',
+        periodStart: 1,
+        periodEnd: 1,
+        type: 'Lý thuyết',
+        subjectName: 'Lập trình Dart',
+        classCode: 'TIN1101',
+        roomName: 'Phòng 101-A',
+        chapter: 'Chương 1: Giới thiệu',
+        status: ScheduleStatus.upcoming,
+      ),
+      ScheduleModel(
+        id: 2,
+        teachingDate: DateTime.now(),
+        periodStartRaw: '08:00',
+        periodEndRaw: '09:40',
+        periodStart: 2,
+        periodEnd: 3,
+        type: 'Thực hành',
+        subjectName: 'Cơ sở dữ liệu',
+        classCode: 'TIN1205',
+        roomName: 'Phòng 205-B',
+        chapter: 'Chương 2: SQL',
+        status: ScheduleStatus.upcoming,
+      ),
+      ScheduleModel(
+        id: 3,
+        teachingDate: DateTime.now().add(const Duration(days: 1)),
+        periodStartRaw: '07:00',
+        periodEndRaw: '07:50',
+        periodStart: 1,
+        periodEnd: 1,
+        type: 'Lý thuyết',
+        subjectName: 'Cấu trúc dữ liệu',
+        classCode: 'TIN1103',
+        roomName: 'Phòng 301-C',
+        chapter: 'Chương 3: Stack & Queue',
+        status: ScheduleStatus.upcoming,
+      ),
+      ScheduleModel(
+        id: 4,
+        teachingDate: DateTime.now().add(const Duration(days: 1)),
+        periodStartRaw: '09:45',
+        periodEndRaw: '11:25',
+        periodStart: 4,
+        periodEnd: 5,
+        type: 'Thực hành',
+        subjectName: 'Lập trình Dart',
+        classCode: 'TIN1101',
+        roomName: 'Phòng 102-A',
+        chapter: 'Chương 2: OOP',
+        status: ScheduleStatus.upcoming,
+      ),
+      ScheduleModel(
+        id: 5,
+        teachingDate: DateTime.now().subtract(const Duration(days: 1)),
+        periodStartRaw: '13:45',
+        periodEndRaw: '15:25',
+        periodStart: 7,
+        periodEnd: 8,
+        type: 'Lý thuyết',
+        subjectName: 'Phân tích thiết kế',
+        classCode: 'TIN1301',
+        roomName: 'Phòng 401-D',
+        chapter: 'Chương 1: UML',
+        status: ScheduleStatus.done,
+      ),
+    ];
+
+    /* ============ API CALL (COMMENTED) ============
     dynamic res;
     try {
       res = await ApiService.getJson('/api/teacher/schedules/$teacherId');
@@ -148,6 +290,9 @@ class TeacherService {
         all.add(ScheduleModel.fromSectionDetail(section: section, detail: d));
       }
     }
+    ============================================ */
+
+    final List<ScheduleModel> all = mockSchedules;
 
     all.sort((a, b) {
       final ad = a.teachingDate ?? DateTime(2100);

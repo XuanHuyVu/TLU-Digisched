@@ -1,18 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tlu_digisched/features/teacher/models/teacher_notification_model.dart';
+import 'package:tlu_digisched/core/constants/constants.dart';
+import 'package:tlu_digisched/features/lecturer/models/teacher_notification_model.dart';
 
 class TeacherNotificationService {
-  String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8080';
-    } else {
-      return 'http://10.0.2.2:8080';
-    }
-  }
-
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
@@ -24,7 +16,7 @@ class TeacherNotificationService {
       throw Exception('Không tìm thấy token. Vui lòng đăng nhập lại.');
     }
 
-    final uri = Uri.parse('$baseUrl/api/teacher/notifications');
+    final uri = Uri.parse('${Constants.baseUrl}/api/teacher/notifications');
     final response = await http.get(
       uri,
       headers: {
@@ -51,7 +43,7 @@ class TeacherNotificationService {
     }
 
     final uri =
-    Uri.parse('$baseUrl/api/teacher/notifications/read/$notificationId');
+    Uri.parse('${Constants.baseUrl}/api/teacher/notifications/read/$notificationId');
     final response = await http.put(
       uri,
       headers: {

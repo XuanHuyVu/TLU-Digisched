@@ -3,29 +3,22 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tlu_digisched/core/constants/constants.dart';
+import '../models/teacher_profile_model.dart';
 
-import '../models/teacher_stat_model.dart';
-
-class TeacherStatService {
+class TeacherProfileService {
   final http.Client _client;
-
-  TeacherStatService({http.Client? client}) : _client = client ?? http.Client();
-
-  /// Base URL configuration
-  static String get baseUrl =>
-      kIsWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
-
-  /// Prepare headers with token
+  TeacherProfileService({http.Client? client}) : _client = client ?? http.Client();
   static Future<Map<String, String>> _headers() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token')?.trim();
 
     if (kDebugMode) {
-      print('🔍 Đang lấy token cho yêu cầu stats:');
+      print('🔍 Đang lấy token cho yêu cầu profile:');
       print('   - Token tồn tại: ${token != null}');
       print('   - Độ dài token: ${token?.length ?? 0}');
       if (token != null && token.length > 20) {
-        print('   - 20 ký tự đầu: ${token.substring(0, 20)}...');
+        print('   - 20 ký tự đầu của token: ${token.substring(0, 20)}...');
       }
     }
 
@@ -40,20 +33,20 @@ class TeacherStatService {
     };
   }
 
-  /// Fetch teacher statistics
-  Future<List<TeacherStat>> getStats() async {
+  Future<TeacherProfile> getProfile() async {
     try {
       final headers = await _headers();
-      final uri = Uri.parse('$baseUrl/api/teacher/stats/me');
+      final uri = Uri.parse('${Constants.baseUrl}/api/teacher/profile');
 
       if (kDebugMode) {
-        print('📡 Gửi yêu cầu stats tới: $uri');
+        print('📡 Gửi yêu cầu profile tới: $uri');
         print('📋 Headers: $headers');
       }
 
-      final response = await _client
-          .get(uri, headers: headers)
-          .timeout(const Duration(seconds: 15));
+      final response = await _client.get(
+        uri,
+        headers: headers,
+      ).timeout(const Duration(seconds: 15));
 
       if (kDebugMode) {
         print('📨 Trạng thái response: ${response.statusCode}');
@@ -61,15 +54,13 @@ class TeacherStatService {
       }
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-
+        final data = jsonDecode(response.body);
         if (kDebugMode) {
-          print('✅ Tải thống kê thành công: ${data.length} bản ghi');
+          print('✅ Tải profile thành công');
         }
-
-        return data.map((json) => TeacherStat.fromJson(json)).toList();
+        return TeacherProfile.fromJson(data);
       } else {
-        String errorMessage = 'Không thể tải thống kê: ${response.statusCode}';
+        String errorMessage = 'Không thể tải profile: ${response.statusCode}';
         try {
           final errorData = jsonDecode(response.body);
           if (errorData is Map<String, dynamic>) {
@@ -83,23 +74,26 @@ class TeacherStatService {
             print('⚠️ Lỗi khi parse response lỗi: $e');
           }
         }
+        if (kDebugMode) {
+          print('❌ Lỗi: $errorMessage');
+        }
         throw Exception(errorMessage);
       }
     } on TimeoutException catch (e) {
       if (kDebugMode) {
-        print('❌ Hết thời gian kết nối khi tải stats: $e');
+        print('❌ Hết thời gian kết nối khi tải profile: $e');
       }
       throw Exception('Hết thời gian kết nối. Vui lòng kiểm tra mạng và thử lại.');
     } on http.ClientException catch (e) {
       if (kDebugMode) {
-        print('❌ Lỗi mạng khi tải stats: ${e.message}');
+        print('❌ Lỗi mạng khi tải profile: ${e.message}');
       }
       throw Exception('Lỗi mạng: ${e.message}');
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Lỗi không xác định khi tải stats: $e');
+        print('❌ Lỗi không xác định khi tải profile: $e');
       }
-      throw Exception('Không thể tải thống kê: ${e.toString()}');
+      throw Exception('Không thể tải profile: ${e.toString()}');
     }
   }
 

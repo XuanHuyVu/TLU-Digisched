@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tlu_digisched/features/teacher/models/teacher_notification_model.dart';
-import 'package:tlu_digisched/features/teacher/services/teacher_notification_service.dart';
+import 'package:tlu_digisched/features/lecturer/models/teacher_notification_model.dart';
+import 'package:tlu_digisched/features/lecturer/services/teacher_notification_service.dart';
 
 class TeacherNotificationScreen extends StatefulWidget {
   const TeacherNotificationScreen({super.key});

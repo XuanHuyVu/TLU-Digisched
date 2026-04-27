@@ -54,8 +54,11 @@ class TeacherHomeViewModel extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('refreshUnreadCount error: $e');
+        debugPrint('❌ refreshUnreadCount error: $e');
       }
+      // Không gây crash, chỉ set về 0
+      _unreadCount = 0;
+      notifyListeners();
     }
   }
 
