@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'features/auth/presentation/notifiers/auth_notifier.dart';
 import 'features/auth/presentation/notifiers/auth_service_locator.dart';
+import 'features/lecturer/presentation/views/screens/teacher_home_screen.dart';
 import 'features/student/viewmodels/schedule_viewmodel.dart';
 import 'features/auth/presentation/views/splash_screen.dart';
 import 'features/auth/presentation/views/login_screen.dart';
 import 'features/student/views/screens/schedule_screen.dart';
-import 'features/lecturer/views/screens/teacher_home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
