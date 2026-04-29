@@ -19,11 +19,9 @@ class TeacherHomeNotifier extends ChangeNotifier {
   bool _loading = false;
   String? _error;
   TeacherHomeDataEntity? _homeData;
-
   bool get loading => _loading;
   String? get error => _error;
   TeacherHomeDataEntity? get homeData => _homeData;
-
   int get periodsToday => _homeData?.periodsToday ?? 0;
   int get periodsThisWeek => _homeData?.periodsThisWeek ?? 0;
   int get percentCompleted => _homeData?.percentCompleted ?? 0;
@@ -31,14 +29,11 @@ class TeacherHomeNotifier extends ChangeNotifier {
   String get teacherName => _homeData?.teacher.name ?? 'Giảng viên';
   String get teacherFaculty => _homeData?.teacher.faculty ?? '';
   int get teacherId => _homeData?.teacher.id ?? 0;
-
   int get totalTodaySessions => todaySchedules.length;
   int get completedTodaySessions =>
       todaySchedules.where((s) => s.status == ScheduleStatus.done).length;
-  int get percentTodayCompleted =>
-      totalTodaySessions == 0
-          ? 0
-          : ((completedTodaySessions * 100) / totalTodaySessions).round();
+  int get percentTodayCompleted => totalTodaySessions == 0 ? 0
+      : ((completedTodaySessions * 100) / totalTodaySessions).round();
 
   Future<void> load() async {
     _loading = true;

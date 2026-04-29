@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../config/routes/route.dart';
+import '../../../../core/enums/enum.dart';
 import '../notifiers/auth_notifier.dart';
 import '../../../student/viewmodels/schedule_viewmodel.dart';
 
@@ -23,26 +25,23 @@ class _LoginScreenState extends State<LoginScreen> {
       final authNotifier = context.read<AuthNotifier>();
       await authNotifier.login(_emailController.text.trim(), _passwordController.text,);
       if (!mounted) return;
-      final role = (authNotifier.user?.role ?? '').trim().toUpperCase();
-      if (role == 'STUDENT') {
+      final userRole = UserRole.fromString(authNotifier.user?.role);
+      if (userRole == UserRole.student) {
         final scheduleVM = context.read<ScheduleViewModel>();
         scheduleVM.updateToken(authNotifier.user?.token ?? "");
         scheduleVM.loadSchedules();
       }
-      if (role == 'LECTURER') {
-        if (mounted) Navigator.of(context).pushReplacementNamed('/teacher_home');
-      } else if (role == 'STUDENT') {
-        if (mounted) Navigator.of(context).pushReplacementNamed('/schedule');
+      if (userRole == UserRole.lecturer) {
+        if (mounted) Navigator.of(context).pushReplacementNamed(AppRoutes.teacherHome);
+      } else if (userRole == UserRole.student) {
+        if (mounted) Navigator.of(context).pushReplacementNamed(AppRoutes.schedule);
       } else {
-        throw Exception('Role không hợp lệ: $role');
+        throw Exception('Role không hợp lệ: ${authNotifier.user?.role}');
       }
     } catch (e) {
       if (!mounted) return;
-      
-      // Get error message from AuthNotifier or use generic message
       final authNotifier = context.read<AuthNotifier>();
       final errorMessage = authNotifier.error ?? 'Lỗi đăng nhập. Vui lòng thử lại.';
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -95,7 +94,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: 60,
                     height: 60,
                     errorBuilder: (context, error, stackTrace) {
-                      debugPrint('❌ [LOGIN] Logo image not found: $error');
                       return Icon(
                         Icons.school,
                         size: 40,
@@ -105,10 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
               const SizedBox(height: 32),
-              
-              // Title
               Text(
                 'TLU Digisched',
                 style: TextStyle(
@@ -118,10 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   letterSpacing: 0.3,
                 ),
               ),
-              
               const SizedBox(height: 8),
-              
-              // Subtitle
               Text(
                 'Hệ thống quản lý thời khóa biểu',
                 style: TextStyle(
@@ -130,16 +122,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontWeight: FontWeight.w400,
                 ),
               ),
-              
               const SizedBox(height: 48),
-              
-              // Form
               Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Email Label
                     Text(
                       'Email',
                       style: TextStyle(
@@ -149,8 +137,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    
-                    // Email Input
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,

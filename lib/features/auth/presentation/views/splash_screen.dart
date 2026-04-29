@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../config/routes/route.dart';
+import '../../../../core/enums/enum.dart';
 import '../notifiers/auth_notifier.dart';
 import '../../../student/viewmodels/schedule_viewmodel.dart';
 
@@ -19,52 +21,36 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkAuthStatus() async {
     await Future.delayed(const Duration(milliseconds: 1000));
-    
-    if (!mounted) {
-      return;
-    }
-    
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    final authNotifier = context.read<AuthNotifier>();
     try {
-      final authNotifier = context.read<AuthNotifier>();
       await authNotifier.loadUserFromStorage();
-      
-      if (!mounted) {
+      if (!mounted) return;
+      final isAuthenticated = authNotifier.isLoggedIn && authNotifier.isTokenValid;
+      if (!isAuthenticated) {
+        await authNotifier.logout();
+        if (mounted) navigator.pushReplacementNamed(AppRoutes.login);
         return;
       }
-      
-      if (authNotifier.isLoggedIn && authNotifier.isTokenValid) {
-        final role = (authNotifier.user?.role ?? '').trim().toUpperCase();
-        
-        if (role == 'STUDENT') {
+      final userRole = UserRole.fromString(authNotifier.user?.role);
+      switch (userRole) {
+        case UserRole.student:
           final scheduleVM = context.read<ScheduleViewModel>();
           scheduleVM.updateToken(authNotifier.user?.token ?? "");
-          scheduleVM.loadSchedules();
-        }
-        
-        if (role == 'LECTURER') {
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/teacher_home');
-          }
-        } else if (role == 'STUDENT') {
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/schedule');
-          }
-        } else {
+          await scheduleVM.loadSchedules();
+          if (mounted) navigator.pushReplacementNamed(AppRoutes.schedule);
+          return;
+        case UserRole.lecturer:
+          if (mounted) navigator.pushReplacementNamed(AppRoutes.teacherHome);
+          return;
+        default:
           await authNotifier.logout();
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/login');
-          }
-        }
-      } else {
-        await authNotifier.logout();
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/login');
-        }
+          if (mounted) navigator.pushReplacementNamed(AppRoutes.login);
+          return;
       }
-    } catch (e) {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/login');
-      }
+    } catch (_) {
+      if (mounted) navigator.pushReplacementNamed(AppRoutes.login);
     }
   }
 
@@ -76,7 +62,6 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo
             Container(
               width: 100,
               height: 100,
@@ -99,10 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
             ),
-            
             const SizedBox(height: 32),
-            
-            // App Name
             Text(
               'TLU Digisched',
               style: TextStyle(
@@ -112,10 +94,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 letterSpacing: 0.3,
               ),
             ),
-            
             const SizedBox(height: 8),
-            
-            // Subtitle
             Text(
               'Hệ thống quản lý thời khóa biểu',
               style: TextStyle(
@@ -124,10 +103,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 fontWeight: FontWeight.w400,
               ),
             ),
-            
             const SizedBox(height: 48),
-            
-            // Loading Indicator
             SizedBox(
               width: 40,
               height: 40,
@@ -138,10 +114,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
             ),
-            
             const SizedBox(height: 16),
-            
-            // Loading Text
             Text(
               'Đang tải...',
               style: TextStyle(

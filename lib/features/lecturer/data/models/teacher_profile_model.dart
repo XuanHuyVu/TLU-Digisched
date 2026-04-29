@@ -2,7 +2,6 @@ import '../../domain/entities/teacher_profile_entity.dart';
 
 class DepartmentModel extends DepartmentEntity {
   const DepartmentModel({required super.name});
-
   factory DepartmentModel.fromJson(Map<String, dynamic> json) {
     return DepartmentModel(name: json['name'] ?? '');
   }
@@ -10,7 +9,6 @@ class DepartmentModel extends DepartmentEntity {
 
 class FacultyModel extends FacultyEntity {
   const FacultyModel({required super.name});
-
   factory FacultyModel.fromJson(Map<String, dynamic> json) {
     return FacultyModel(name: json['name'] ?? '');
   }
@@ -35,18 +33,10 @@ class TeacherProfileModel extends TeacherProfileEntity {
       fullName: json['fullName'] ?? '',
       gender: json['gender'] ?? '',
       email: json['email'] ?? '',
-      dateOfBirth:
-          DateTime.tryParse(json['dateOfBirth'] ?? DateTime.now().toString()) ??
-          DateTime.now(),
+      dateOfBirth: DateTime.tryParse(json['dateOfBirth'] ?? DateTime.now().toString()) ?? DateTime.now(),
       phoneNumber: json['phoneNumber'] ?? '',
-      department:
-          json['department'] != null
-              ? DepartmentModel.fromJson(json['department'])
-              : null,
-      faculty:
-          json['faculty'] != null
-              ? FacultyModel.fromJson(json['faculty'])
-              : null,
+      department: json['department'] != null ? DepartmentModel.fromJson(json['department']) : null,
+      faculty: json['faculty'] != null ? FacultyModel.fromJson(json['faculty']) : null,
       status: json['status'] ?? '',
     );
   }

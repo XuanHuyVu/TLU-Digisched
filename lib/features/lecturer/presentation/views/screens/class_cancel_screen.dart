@@ -56,32 +56,23 @@ class _ClassCancelScreenState extends State<ClassCancelScreen> {
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-
       String? fileUrl = _selectedFile != null ? 'https://example.com/uploads/${_selectedFile!.name}' : null;
-      final result = await widget.onSubmit(
-        _reasonController.text.trim(),
-        fileUrl,
-      );
-
+      final result = await widget.onSubmit(_reasonController.text.trim(), fileUrl);
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Gửi yêu cầu thành công!'),
           backgroundColor: Colors.green,
         ),
       );
-
       Navigator.of(context).pop(result);
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lỗi: ${e.toString()}'),

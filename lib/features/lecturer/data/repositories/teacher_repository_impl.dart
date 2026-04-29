@@ -69,7 +69,6 @@ class TeacherRepositoryImpl implements TeacherRepository {
         if (s.teachingDate == null) return false;
         return _sameDate(s.teachingDate!, now);
       }).toList();
-
       final monday = _mondayOfWeek(now);
       final sunday = _sundayOfWeek(now);
       bool inWeek(DateTime d) => !d.isBefore(monday) && !d.isAfter(sunday);
