@@ -64,9 +64,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               value: notifiers['scheduleNotifier'] as TeacherScheduleNotifier,
             ),
             ChangeNotifierProvider.value(
-              value:
-                  notifiers['notificationNotifier']
-                      as TeacherNotificationNotifier,
+              value: notifiers['notificationNotifier'] as TeacherNotificationNotifier,
             ),
           ],
           child: Scaffold(
@@ -102,33 +100,26 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<TeacherHomeNotifier>();
-
     if (notifier.loading) {
       return const SafeArea(child: Center(child: CircularProgressIndicator()));
     }
     if (notifier.error != null) {
       return SafeArea(child: Center(child: Text('Lỗi: ${notifier.error}')));
     }
-
     final todayStr = DateTime.now().toDdMMyyyy();
-    final displayName =
-        notifier.teacherName.isNotEmpty ? notifier.teacherName : 'Giảng viên';
-
+    final displayName = notifier.teacherName.isNotEmpty ? notifier.teacherName : 'Giảng viên';
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(12),
         children: <Widget>[
           _TopBar(name: displayName),
           const SizedBox(height: 12),
-
           StatsPanel(
             periodsToday: notifier.periodsToday,
             periodsThisWeek: notifier.periodsThisWeek,
             percentCompleted: notifier.percentCompleted,
           ),
-
           const SizedBox(height: 16),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -161,7 +152,6 @@ class _HomeTab extends StatelessWidget {
               ),
             ],
           ),
-
           ...notifier.todaySchedules.map(
             (e) => ScheduleCard(
               item: e,
@@ -170,7 +160,6 @@ class _HomeTab extends StatelessWidget {
               },
             ),
           ),
-
           if (notifier.todaySchedules.isEmpty)
             const Center(
               child: Padding(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../../domain/entities/teacher_entity.dart';
 
 class TeacherInfoCard extends StatelessWidget {

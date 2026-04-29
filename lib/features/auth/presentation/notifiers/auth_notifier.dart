@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/enums/enum.dart';
 import '../../../../core/utils/token_validator.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/usecases/get_token_usecase.dart';
@@ -26,11 +27,13 @@ class AuthNotifier extends ChangeNotifier {
 
   User? get user => _user;
   bool get isLoggedIn => _user != null && _isTokenValid;
-  bool get isTeacher => _user?.role == 'LECTURER';
-  bool get isStudent => _user?.role == 'STUDENT';
+  bool get isTeacher => _userRole?.isLecturer ?? false;
+  bool get isStudent => _userRole?.isStudent ?? false;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isTokenValid => _isTokenValid;
+
+  UserRole? get _userRole => UserRole.fromString(_user?.role);
 
   Future<void> login(String email, String password) async {
     _isLoading = true;
@@ -108,38 +111,24 @@ class AuthNotifier extends ChangeNotifier {
     );
   }
 
-  /// Extract user-friendly error message from exception
   String _extractErrorMessage(String errorString) {
-    // Remove "Exception: " prefix if present
     String message = errorString.replaceFirst('Exception: ', '');
-    
-    // Check for specific error patterns
     if (message.contains('Connection timeout')) {
       return 'Kết nối timeout. Vui lòng kiểm tra kết nối mạng và thử lại.';
     }
-    
-    if (message.contains('Failed host lookup') || 
-        message.contains('Network is unreachable')) {
+    if (message.contains('Failed host lookup') || message.contains('Network is unreachable')) {
       return 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
     }
-    
     if (message.contains('Connection refused')) {
       return 'Server không phản hồi. Vui lòng thử lại sau.';
     }
-    
-    if (message.contains('Invalid token structure') || 
-        message.contains('No access token')) {
+    if (message.contains('Invalid token structure') || message.contains('No access token')) {
       return 'Lỗi server. Vui lòng liên hệ quản trị viên.';
     }
-    
-    if (message.contains('Sai tài khoản') || 
-        message.contains('Sai mật khẩu') ||
-        message.contains('Invalid credentials') ||
-        message.contains('Unauthorized')) {
+    if (message.contains('Sai tài khoản') || message.contains('Sai mật khẩu') ||
+        message.contains('Invalid credentials') || message.contains('Unauthorized')) {
       return 'Sai tài khoản hoặc mật khẩu.';
     }
-    
-    // Default message for other errors
     return message.isNotEmpty ? message : 'Lỗi đăng nhập. Vui lòng thử lại.';
   }
 }

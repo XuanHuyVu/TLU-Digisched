@@ -10,7 +10,6 @@ class TeacherStatsNotifier extends ChangeNotifier {
   bool _loading = false;
   String? _error;
   TeacherStatEntity? _stats;
-
   bool get loading => _loading;
   String? get error => _error;
   TeacherStatEntity? get stats => _stats;

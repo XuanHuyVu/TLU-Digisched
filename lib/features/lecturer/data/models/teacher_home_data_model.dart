@@ -17,11 +17,7 @@ class TeacherHomeDataModel extends TeacherHomeDataEntity {
       periodsToday: json['periodsToday'] ?? 0,
       periodsThisWeek: json['periodsThisWeek'] ?? 0,
       percentCompleted: json['percentCompleted'] ?? 0,
-      todaySchedules:
-          (json['todaySchedules'] as List?)
-              ?.map((e) => ScheduleModel.fromJson(e))
-              .toList() ??
-          [],
+      todaySchedules: (json['todaySchedules'] as List?) ?.map((e) => ScheduleModel.fromJson(e)).toList() ?? [],
     );
   }
 }

@@ -24,7 +24,6 @@ import '../../data/repositories/teacher_stats_repository_impl.dart';
 
 class TeacherServiceLocator {
   static Future<Map<String, dynamic>> setup(SharedPreferences prefs) async {
-    // Datasources
     final teacherRemoteDataSource = TeacherRemoteDataSource(
       client: http.Client(),
     );
@@ -38,7 +37,6 @@ class TeacherServiceLocator {
       client: http.Client(),
     );
 
-    // Repositories
     final teacherRepository = TeacherRepositoryImpl(
       remoteDataSource: teacherRemoteDataSource,
     );
@@ -52,7 +50,6 @@ class TeacherServiceLocator {
       remoteDataSource: statsRemoteDataSource,
     );
 
-    // Use Cases
     final fetchHomeDataUseCase = FetchTeacherHomeDataUseCase(
       repository: teacherRepository,
     );
@@ -78,7 +75,6 @@ class TeacherServiceLocator {
       repository: statsRepository,
     );
 
-    // Notifiers
     final homeNotifier = TeacherHomeNotifier(
       fetchHomeDataUseCase: fetchHomeDataUseCase,
       markScheduleAsDoneUseCase: markScheduleAsDoneUseCase,
@@ -91,12 +87,7 @@ class TeacherServiceLocator {
       requestClassCancelUseCase: requestClassCancelUseCase,
     );
 
-    // Load schedules asynchronously
-    scheduleNotifier.load().then((_) {
-      // Schedules loaded successfully
-    }).catchError((e) {
-      // Error loading schedules
-    });
+    scheduleNotifier.load().then((_) {}).catchError((e) {});
 
     final notificationNotifier = TeacherNotificationNotifier(
       fetchNotificationsUseCase: fetchNotificationsUseCase,

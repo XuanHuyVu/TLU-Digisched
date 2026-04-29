@@ -55,9 +55,7 @@ class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
           );
         }
 
-        final notificationNotifier =
-            notifiers['notificationNotifier'] as TeacherNotificationNotifier;
-
+        final notificationNotifier = notifiers['notificationNotifier'] as TeacherNotificationNotifier;
         return DefaultTabController(
           length: 3,
           child: ChangeNotifierProvider<TeacherNotificationNotifier>.value(
@@ -109,7 +107,6 @@ class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
                   final all = notifier.notifications;
                   final read = all.where((n) => n.isRead).toList();
                   final unread = all.where((n) => !n.isRead).toList();
-
                   return TabBarView(
                     children: [
                       _NotificationListView(
