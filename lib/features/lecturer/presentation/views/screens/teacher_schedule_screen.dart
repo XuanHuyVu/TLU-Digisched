@@ -34,47 +34,89 @@ class TeacherScheduleScreen extends StatefulWidget {
 
 class _TeacherScheduleScreenState extends State<TeacherScheduleScreen>
     with TickerProviderStateMixin {
-  late final Map<String, dynamic> _notifiers;
+  late Future<Map<String, dynamic>> _initFuture;
+  late TabController _tabController;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeNotifiers();
+    _initFuture = _initializeNotifiers();
   }
 
-  Future<void> _initializeNotifiers() async {
-    final prefs = await SharedPreferences.getInstance();
-    _notifiers = await TeacherServiceLocator.setup(prefs);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _tabController = TabController(length: 3, vsync: this);
+      _initialized = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_initialized) {
+      _tabController.dispose();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: Future.value(),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _initFuture,
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text("Lỗi: ${snapshot.error}")),
+          );
+        }
+        
+        final notifiers = snapshot.data;
+        if (notifiers == null) {
+          return const Scaffold(
+            body: Center(child: Text("Không thể khởi tạo dữ liệu")),
+          );
+        }
+        
         return ChangeNotifierProvider.value(
-          value:
-              _notifiers['scheduleNotifier'] as TeacherScheduleNotifier? ??
-              TeacherScheduleNotifier(
-                markScheduleAsDoneUseCase: null as dynamic,
-                requestClassCancelUseCase: null as dynamic,
-              ),
-          child: const _Body(),
+          value: notifiers['scheduleNotifier'] as TeacherScheduleNotifier,
+          child: _Body(tabController: _tabController),
         );
       },
     );
   }
+
+  Future<Map<String, dynamic>> _initializeNotifiers() async {
+    final prefs = await SharedPreferences.getInstance();
+    return await TeacherServiceLocator.setup(prefs);
+  }
 }
 
 class _Body extends StatefulWidget {
-  const _Body();
+  final TabController tabController;
+
+  const _Body({required this.tabController});
 
   @override
   State<_Body> createState() => _BodyState();
 }
 
-class _BodyState extends State<_Body> with TickerProviderStateMixin {
-  late final TabController _tab = TabController(length: 2, vsync: this);
+class _BodyState extends State<_Body> {
+  @override
+  void initState() {
+    super.initState();
+    // Load schedules when screen is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TeacherScheduleNotifier>().load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +154,7 @@ class _BodyState extends State<_Body> with TickerProviderStateMixin {
               child: Padding(
                 padding: const EdgeInsets.all(3),
                 child: TabBar(
-                  controller: _tab,
+                  controller: widget.tabController,
                   indicator: BoxDecoration(
                     color: _brandBlue,
                     borderRadius: BorderRadius.circular(8),
@@ -121,7 +163,11 @@ class _BodyState extends State<_Body> with TickerProviderStateMixin {
                   dividerColor: Colors.transparent,
                   labelColor: Colors.white,
                   unselectedLabelColor: Colors.black87,
-                  tabs: const [Tab(text: 'Hôm nay'), Tab(text: 'Tuần này')],
+                  tabs: const [
+                    Tab(text: 'Hôm nay'),
+                    Tab(text: 'Tuần này'),
+                    Tab(text: 'Toàn kỳ'),
+                  ],
                 ),
               ),
             ),
@@ -129,8 +175,8 @@ class _BodyState extends State<_Body> with TickerProviderStateMixin {
           const SizedBox(height: 8),
           Expanded(
             child: TabBarView(
-              controller: _tab,
-              children: const [_DayTab(), _WeekTab()],
+              controller: widget.tabController,
+              children: const [_DayTab(), _WeekTab(), _SemesterTab()],
             ),
           ),
         ],
@@ -362,6 +408,49 @@ class _WeekTab extends StatelessWidget {
               ),
             ];
           }).toList(),
+    );
+  }
+}
+
+
+class _SemesterTab extends StatelessWidget {
+  const _SemesterTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final notifier = context.watch<TeacherScheduleNotifier>();
+    
+    // Since API doesn't provide teachingDate, just display all schedules
+    final schedules = notifier.schedules;
+
+    if (schedules.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Không có lịch dạy trong kỳ này.',
+            style: TextStyle(color: Colors.black.withAlpha(178)),
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      children: schedules.map((schedule) {
+        return ScheduleCard(
+          item: schedule,
+          onMarkDone:
+              () => context.read<TeacherScheduleNotifier>().markDone(schedule),
+          onRequestCancel:
+              (reason, fileUrl) =>
+                  context.read<TeacherScheduleNotifier>().requestCancel(
+                    detailId: schedule.id,
+                    reason: reason,
+                    fileUrl: fileUrl,
+                  ),
+        );
+      }).toList(),
     );
   }
 }

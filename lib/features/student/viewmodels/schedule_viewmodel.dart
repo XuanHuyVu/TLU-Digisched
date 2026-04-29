@@ -3,10 +3,16 @@ import '../models/student_schedule_model.dart';
 import '../services/schedule_service.dart';
 
 class ScheduleViewModel extends ChangeNotifier {
-  late final ScheduleService _scheduleService;
+  late ScheduleService _scheduleService;
 
   ScheduleViewModel(String token) {
     _scheduleService = ScheduleService(token);
+  }
+
+  // Update token and recreate service
+  void updateToken(String token) {
+    _scheduleService = ScheduleService(token);
+    notifyListeners();
   }
 
   List<StudentScheduleModel> _schedules = [];

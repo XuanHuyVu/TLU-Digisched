@@ -12,117 +12,123 @@ class TeacherStatScreen extends StatefulWidget {
 }
 
 class _TeacherStatScreenState extends State<TeacherStatScreen> {
-  late final Map<String, dynamic> _notifiers;
+  late Future<Map<String, dynamic>> _initFuture;
 
   @override
   void initState() {
     super.initState();
-    _initializeNotifiers();
-  }
-
-  Future<void> _initializeNotifiers() async {
-    final prefs = await SharedPreferences.getInstance();
-    _notifiers = await TeacherServiceLocator.setup(prefs);
-    final statsNotifier = _notifiers['statsNotifier'] as TeacherStatsNotifier;
-    await statsNotifier.load();
+    _initFuture = _initializeNotifiers();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ChangeNotifierProvider.value(
-        value:
-            _notifiers['statsNotifier'] as TeacherStatsNotifier? ??
-            TeacherStatsNotifier(fetchStatsUseCase: _mockUseCase),
-        child: Consumer<TeacherStatsNotifier>(
-          builder: (context, notifier, child) {
-            if (notifier.loading) return const Center(child: CircularProgressIndicator());
-            if (notifier.error != null) return Center(child: Text("Lỗi: ${notifier.error}"));
-            final stat = notifier.stats;
-            if (stat == null) return const Center(child: Text("Không có dữ liệu"));
-            final completionRate = ((stat.taughtHours + stat.makeUpHours) / stat.totalHours * 100).toStringAsFixed(0);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  color: Colors.blue[600],
-                  child: const Center(
-                    child: Text(
-                      "Thống kê lịch dạy",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _initFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) return Center(child: Text("Lỗi: ${snapshot.error}"));
+          final notifiers = snapshot.data;
+          if (notifiers == null) return const Center(child: Text("Không thể khởi tạo dữ liệu"));
+          final statsNotifier = notifiers['statsNotifier'] as TeacherStatsNotifier;
+          return ChangeNotifierProvider.value(
+            value: statsNotifier,
+            child: Consumer<TeacherStatsNotifier>(
+              builder: (context, notifier, child) {
+                if (notifier.loading) return const Center(child: CircularProgressIndicator());
+                if (notifier.error != null) return Center(child: Text("Lỗi: ${notifier.error}"));
+                final stat = notifier.stats;
+                if (stat == null) return const Center(child: Text("Không có dữ liệu"));
+                final completionRate = ((stat.taughtHours + stat.makeUpHours) / stat.totalHours * 100).toStringAsFixed(0);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      color: Colors.blue[600],
+                      child: const Center(
+                        child: Text(
+                          "Thống kê lịch dạy",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[400],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                "${stat.semesterName} - ${stat.teacherName}",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[400],
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              const SizedBox(height: 16),
-                              GridView.count(
-                                crossAxisCount: 2,
-                                shrinkWrap: true,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                physics: const NeverScrollableScrollPhysics(),
+                              child: Column(
                                 children: [
-                                  _buildStatCard(
-                                    "${stat.taughtHours}",
-                                    "Giờ đã dạy",
+                                  Text(
+                                    "${stat.semesterName} - ${stat.teacherName}",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                  _buildStatCard(
-                                    "${stat.makeUpHours}",
-                                    "Giờ dạy bù",
-                                  ),
-                                  _buildStatCard(
-                                    "${stat.notTaughtHours}",
-                                    "Giờ nghỉ",
-                                  ),
-                                  _buildStatCard(
-                                    "$completionRate%",
-                                    "Tỷ lệ hoàn thành",
+                                  const SizedBox(height: 16),
+                                  GridView.count(
+                                    crossAxisCount: 2,
+                                    shrinkWrap: true,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    children: [
+                                      _buildStatCard(
+                                        "${stat.taughtHours}",
+                                        "Giờ đã dạy",
+                                      ),
+                                      _buildStatCard(
+                                        "${stat.makeUpHours}",
+                                        "Giờ dạy bù",
+                                      ),
+                                      _buildStatCard(
+                                        "${stat.notTaughtHours}",
+                                        "Giờ nghỉ",
+                                      ),
+                                      _buildStatCard(
+                                        "$completionRate%",
+                                        "Tỷ lệ hoàn thành",
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+                  ],
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
 
-  // Mock use case for fallback
-  dynamic get _mockUseCase => null;
+  Future<Map<String, dynamic>> _initializeNotifiers() async {
+    final prefs = await SharedPreferences.getInstance();
+    final notifiers = await TeacherServiceLocator.setup(prefs);
+    final statsNotifier = notifiers['statsNotifier'] as TeacherStatsNotifier;
+    await statsNotifier.load();
+    return notifiers;
+  }
 
   Widget _buildStatCard(String value, String label) {
     return Container(

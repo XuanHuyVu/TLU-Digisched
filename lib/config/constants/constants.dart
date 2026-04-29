@@ -5,6 +5,7 @@ class Constants {
   static const String id = 'id';
   static const String email = 'email';
   static const String password = 'password';
+  static const String user = 'user';
 
   static const Map<int, String> timeOfPeriod = {
     1:  "07:00 - 07:50",

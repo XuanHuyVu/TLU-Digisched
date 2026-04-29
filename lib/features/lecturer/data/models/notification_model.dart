@@ -2,24 +2,15 @@ import '../../domain/entities/notification_entity.dart';
 
 class NotificationModel extends NotificationEntity {
   const NotificationModel({
-    required int id,
-    required String title,
-    required String content,
-    required String type,
-    required int relatedScheduleChangeId,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-    required bool isRead,
-  }) : super(
-         id: id,
-         title: title,
-         content: content,
-         type: type,
-         relatedScheduleChangeId: relatedScheduleChangeId,
-         createdAt: createdAt,
-         updatedAt: updatedAt,
-         isRead: isRead,
-       );
+    required super.id,
+    required super.title,
+    required super.content,
+    required super.type,
+    required super.relatedScheduleChangeId,
+    required super.createdAt,
+    required super.updatedAt,
+    required super.isRead,
+  });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-
 import '../../viewmodels/schedule_viewmodel.dart';
 import '../widgets/schedule_card.dart';
 import '../widgets/week_calendar.dart';
@@ -17,21 +16,28 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
+  int _unreadCount = 0;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ScheduleViewModel>().loadSchedules();
     });
+    _loadUnreadCount();
   }
 
-  Future<int> _getUnreadCount() async {
+  Future<void> _loadUnreadCount() async {
     try {
       final service = NotificationService();
       final notifications = await service.fetchNotifications();
-      return notifications.where((n) => !n.isRead).length;
+      if (mounted) {
+        setState(() {
+          _unreadCount = notifications.where((n) => !n.isRead).length;
+        });
+      }
     } catch (e) {
-      return 0;
+      // Ignore error, keep count at 0
     }
   }
 
@@ -48,47 +54,41 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               children: [
                 Image.asset('assets/images/LOGO_THUYLOI.png', height: 28),
                 const Spacer(),
-                FutureBuilder<int>(
-                  future: _getUnreadCount(),
-                  builder: (context, snapshot) {
-                    int unreadCount = snapshot.data ?? 0;
-                    return Stack(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.notifications_rounded),
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const NotificationScreen()),
-                            );
-                            setState(() {});
-                          },
-                        ),
-                        if (unreadCount > 0)
-                          Positioned(
-                            right: 4,
-                            top: 4,
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                              child: Text(
-                                '$unreadCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_rounded),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                        );
+                        _loadUnreadCount();
+                      },
+                    ),
+                    if (_unreadCount > 0)
+                      Positioned(
+                        right: 4,
+                        top: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
                           ),
-                      ],
-                    );
-                  },
+                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                          child: Text(
+                            '$_unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
