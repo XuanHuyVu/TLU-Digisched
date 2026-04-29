@@ -4,13 +4,33 @@ import 'package:provider/provider.dart';
 import 'package:tlu_digisched/features/student/models/notification_model.dart';
 import 'package:tlu_digisched/features/student/viewmodels/notification_viewmodel.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
   @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  late final NotificationViewModel _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = NotificationViewModel();
+    _viewModel.fetchNotifications();
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => NotificationViewModel()..fetchNotifications(),
+    return ChangeNotifierProvider.value(
+      value: _viewModel,
       child: DefaultTabController(
         length: 3,
         child: Scaffold(

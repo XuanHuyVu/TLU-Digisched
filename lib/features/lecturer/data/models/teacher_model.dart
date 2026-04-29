@@ -2,18 +2,12 @@ import '../../domain/entities/teacher_entity.dart';
 
 class TeacherModel extends TeacherEntity {
   const TeacherModel({
-    required int id,
-    required String name,
-    required String faculty,
-    String? department,
-    String? avatarUrl,
-  }) : super(
-         id: id,
-         name: name,
-         faculty: faculty,
-         department: department,
-         avatarUrl: avatarUrl,
-       );
+    required super.id,
+    required super.name,
+    required super.faculty,
+    super.department,
+    super.avatarUrl,
+  });
 
   factory TeacherModel.fromJson(Map<String, dynamic> json) {
     return TeacherModel(

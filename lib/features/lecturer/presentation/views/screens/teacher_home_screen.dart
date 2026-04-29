@@ -23,36 +23,49 @@ class TeacherHomeScreen extends StatefulWidget {
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _index = 0;
-
-  late final Map<String, dynamic> _notifiers;
+  late Future<Map<String, dynamic>> _initFuture;
 
   @override
   void initState() {
     super.initState();
-    _initializeNotifiers();
-  }
-
-  Future<void> _initializeNotifiers() async {
-    final prefs = await SharedPreferences.getInstance();
-    _notifiers = await TeacherServiceLocator.setup(prefs);
+    _initFuture = _initializeNotifiers();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: Future.value(),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _initFuture,
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text("Lỗi: ${snapshot.error}")),
+          );
+        }
+        
+        final notifiers = snapshot.data;
+        if (notifiers == null) {
+          return const Scaffold(
+            body: Center(child: Text("Không thể khởi tạo dữ liệu")),
+          );
+        }
+        
         return MultiProvider(
           providers: [
             ChangeNotifierProvider.value(
-              value: _notifiers['homeNotifier'] as TeacherHomeNotifier,
+              value: notifiers['homeNotifier'] as TeacherHomeNotifier,
             ),
             ChangeNotifierProvider.value(
-              value: _notifiers['scheduleNotifier'] as TeacherScheduleNotifier,
+              value: notifiers['scheduleNotifier'] as TeacherScheduleNotifier,
             ),
             ChangeNotifierProvider.value(
               value:
-                  _notifiers['notificationNotifier']
+                  notifiers['notificationNotifier']
                       as TeacherNotificationNotifier,
             ),
           ],
@@ -74,6 +87,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         );
       },
     );
+  }
+
+  Future<Map<String, dynamic>> _initializeNotifiers() async {
+    final prefs = await SharedPreferences.getInstance();
+    return await TeacherServiceLocator.setup(prefs);
   }
 }
 

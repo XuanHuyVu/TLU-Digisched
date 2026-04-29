@@ -29,29 +29,42 @@ class TeacherRemoteDataSource {
   Future<Map<String, dynamic>> fetchHomeData(int teacherId) async {
     try {
       final headers = await _getHeaders();
-      final uri = Uri.parse('/api/teacher/schedules/$teacherId');
-
-      if (kDebugMode) {
-        print('📡 Fetching home data from: $uri');
-      }
+      final uri = Uri.parse('${ApiEndpoints.baseUrl}/lecturer/schedules');
 
       final response = await _client
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
-        if (kDebugMode) {
-          print('✅ Home data loaded successfully');
-        }
-        return {'items': jsonDecode(response.body)};
+        final data = jsonDecode(response.body);
+        final items = data['data']?['items'] ?? [];
+        return {'items': items};
       } else {
-        throw Exception('Failed to load home data: ${response.statusCode}');
+        throw Exception('Failed to load schedules: ${response.statusCode}');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error: $e');
+      throw Exception('Không thể tải lịch dạy: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchScheduleEntries(int scheduleId) async {
+    try {
+      final headers = await _getHeaders();
+      final uri = Uri.parse('${ApiEndpoints.baseUrl}/lecturer/schedules/$scheduleId/entries');
+
+      final response = await _client
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final entries = data['data'] ?? [];
+        return List<Map<String, dynamic>>.from(entries);
+      } else {
+        throw Exception('Failed to load entries: ${response.statusCode}');
       }
-      throw Exception('Không thể tải dữ liệu: $e');
+    } catch (e) {
+      throw Exception('Không thể tải chi tiết lịch dạy: $e');
     }
   }
 

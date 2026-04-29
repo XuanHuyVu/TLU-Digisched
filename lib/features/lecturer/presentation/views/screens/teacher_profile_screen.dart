@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../services/avatar_service_mobile.dart';
 import '../../../../../shared/widgets/settings_section.dart';
@@ -17,21 +17,20 @@ class TeacherProfileScreen extends StatefulWidget {
 
 class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   String? _avatarBase64;
-  late final Map<String, dynamic> _notifiers;
 
   @override
   void initState() {
     super.initState();
     _loadAvatar();
-    _initializeNotifiers();
   }
 
-  Future<void> _initializeNotifiers() async {
+  Future<Map<String, dynamic>> _initializeNotifiers() async {
     final prefs = await SharedPreferences.getInstance();
-    _notifiers = await TeacherServiceLocator.setup(prefs);
+    final notifiers = await TeacherServiceLocator.setup(prefs);
     final profileNotifier =
-        _notifiers['profileNotifier'] as TeacherProfileNotifier;
+        notifiers['profileNotifier'] as TeacherProfileNotifier;
     await profileNotifier.load();
+    return notifiers;
   }
 
   Future<void> _loadAvatar() async {
@@ -76,7 +75,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     return Scaffold(
       appBar: AppBar(backgroundColor: const Color(0xFF4A90E2), elevation: 0),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: _initializeNotifier(context),
+        future: _initializeNotifiers(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -415,17 +414,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     final parts = name.trim().split(" ");
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return parts.map((e) => e[0]).take(3).join().toUpperCase();
-  }
-
-  Future<Map<String, dynamic>> _initializeNotifier(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    final notifiers = await TeacherServiceLocator.setup(prefs);
-    if (context.mounted) {
-      final profileNotifier =
-          notifiers['profileNotifier'] as TeacherProfileNotifier;
-      await profileNotifier.load();
-    }
-    return notifiers;
   }
 
   Future<void> _handleTokenExpired(BuildContext context) async {

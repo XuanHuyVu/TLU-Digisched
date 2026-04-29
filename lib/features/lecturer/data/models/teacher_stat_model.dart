@@ -2,24 +2,15 @@ import '../../domain/entities/teacher_stat_entity.dart';
 
 class TeacherStatModel extends TeacherStatEntity {
   const TeacherStatModel({
-    required int teacherId,
-    required String teacherName,
-    required int semesterId,
-    required String semesterName,
-    required double taughtHours,
-    required double notTaughtHours,
-    required double makeUpHours,
-    required double totalHours,
-  }) : super(
-         teacherId: teacherId,
-         teacherName: teacherName,
-         semesterId: semesterId,
-         semesterName: semesterName,
-         taughtHours: taughtHours,
-         notTaughtHours: notTaughtHours,
-         makeUpHours: makeUpHours,
-         totalHours: totalHours,
-       );
+    required super.teacherId,
+    required super.teacherName,
+    required super.semesterId,
+    required super.semesterName,
+    required super.taughtHours,
+    required super.notTaughtHours,
+    required super.makeUpHours,
+    required super.totalHours,
+  });
 
   factory TeacherStatModel.fromJson(Map<String, dynamic> json) {
     return TeacherStatModel(

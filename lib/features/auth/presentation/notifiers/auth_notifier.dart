@@ -42,7 +42,7 @@ class AuthNotifier extends ChangeNotifier {
       if (_user != null) _isTokenValid = TokenValidator.isTokenValid(_user!.token);
       _error = null;
     } catch (e) {
-      _error = e.toString();
+      _error = _extractErrorMessage(e.toString());
       _user = null;
       _isTokenValid = false;
       rethrow;
@@ -58,15 +58,22 @@ class AuthNotifier extends ChangeNotifier {
       if (_user != null && _user!.token.isNotEmpty) {
         _isTokenValid = TokenValidator.isTokenValid(_user!.token);
         if (!_isTokenValid) {
+          debugPrint('❌ Token is expired or invalid');
           _user = null;
           await logoutUseCase();
         } else {
+          debugPrint('✅ Token is valid');
           if (TokenValidator.isTokenExpiringSoon(_user!.token)) {
             debugPrint('⚠️ Token expiring soon!');
           }
         }
+      } else {
+        debugPrint('❌ No user or empty token found in storage');
+        _user = null;
+        _isTokenValid = false;
       }
     } catch (e) {
+      debugPrint('❌ Error loading user from storage: $e');
       _user = null;
       _isTokenValid = false;
     }
@@ -99,5 +106,40 @@ class AuthNotifier extends ChangeNotifier {
       _user!.token,
       minutesBefore: minutesBefore,
     );
+  }
+
+  /// Extract user-friendly error message from exception
+  String _extractErrorMessage(String errorString) {
+    // Remove "Exception: " prefix if present
+    String message = errorString.replaceFirst('Exception: ', '');
+    
+    // Check for specific error patterns
+    if (message.contains('Connection timeout')) {
+      return 'Kết nối timeout. Vui lòng kiểm tra kết nối mạng và thử lại.';
+    }
+    
+    if (message.contains('Failed host lookup') || 
+        message.contains('Network is unreachable')) {
+      return 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
+    }
+    
+    if (message.contains('Connection refused')) {
+      return 'Server không phản hồi. Vui lòng thử lại sau.';
+    }
+    
+    if (message.contains('Invalid token structure') || 
+        message.contains('No access token')) {
+      return 'Lỗi server. Vui lòng liên hệ quản trị viên.';
+    }
+    
+    if (message.contains('Sai tài khoản') || 
+        message.contains('Sai mật khẩu') ||
+        message.contains('Invalid credentials') ||
+        message.contains('Unauthorized')) {
+      return 'Sai tài khoản hoặc mật khẩu.';
+    }
+    
+    // Default message for other errors
+    return message.isNotEmpty ? message : 'Lỗi đăng nhập. Vui lòng thử lại.';
   }
 }

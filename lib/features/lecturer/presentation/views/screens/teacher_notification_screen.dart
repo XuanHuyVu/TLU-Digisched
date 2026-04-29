@@ -15,37 +15,53 @@ class TeacherNotificationScreen extends StatefulWidget {
 }
 
 class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
-  late final Map<String, dynamic> _notifiers;
+  late Future<Map<String, dynamic>> _initFuture;
 
   @override
   void initState() {
     super.initState();
-    _initializeNotifiers();
+    _initFuture = _initializeNotifiers();
   }
 
-  Future<void> _initializeNotifiers() async {
+  Future<Map<String, dynamic>> _initializeNotifiers() async {
     final prefs = await SharedPreferences.getInstance();
-    _notifiers = await TeacherServiceLocator.setup(prefs);
-    final notificationNotifier =
-        _notifiers['notificationNotifier'] as TeacherNotificationNotifier;
+    final notifiers = await TeacherServiceLocator.setup(prefs);
+    final notificationNotifier = notifiers['notificationNotifier'] as TeacherNotificationNotifier;
     await notificationNotifier.load();
+    return notifiers;
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: Future.value(),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _initFuture,
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Lỗi: ${snapshot.error}')),
+          );
+        }
+
+        final notifiers = snapshot.data;
+        if (notifiers == null) {
+          return const Scaffold(
+            body: Center(child: Text('Không thể khởi tạo dữ liệu')),
+          );
+        }
+
+        final notificationNotifier =
+            notifiers['notificationNotifier'] as TeacherNotificationNotifier;
+
         return DefaultTabController(
           length: 3,
-          child: ChangeNotifierProvider.value(
-            value:
-                _notifiers['notificationNotifier']
-                    as TeacherNotificationNotifier? ??
-                TeacherNotificationNotifier(
-                  fetchNotificationsUseCase: null as dynamic,
-                  markNotificationAsReadUseCase: null as dynamic,
-                ),
+          child: ChangeNotifierProvider<TeacherNotificationNotifier>.value(
+            value: notificationNotifier,
             child: Scaffold(
               appBar: AppBar(
                 backgroundColor: const Color(0xFF4A90E2),

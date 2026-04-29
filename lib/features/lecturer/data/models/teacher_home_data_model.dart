@@ -4,18 +4,12 @@ import 'schedule_model.dart';
 
 class TeacherHomeDataModel extends TeacherHomeDataEntity {
   const TeacherHomeDataModel({
-    required TeacherModel teacher,
-    required int periodsToday,
-    required int periodsThisWeek,
-    required int percentCompleted,
-    required List<ScheduleModel> todaySchedules,
-  }) : super(
-         teacher: teacher,
-         periodsToday: periodsToday,
-         periodsThisWeek: periodsThisWeek,
-         percentCompleted: percentCompleted,
-         todaySchedules: todaySchedules,
-       );
+    required TeacherModel super.teacher,
+    required super.periodsToday,
+    required super.periodsThisWeek,
+    required super.percentCompleted,
+    required List<ScheduleModel> super.todaySchedules,
+  });
 
   factory TeacherHomeDataModel.fromJson(Map<String, dynamic> json) {
     return TeacherHomeDataModel(

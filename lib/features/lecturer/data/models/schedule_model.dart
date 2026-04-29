@@ -41,32 +41,19 @@ String statusToApi(ScheduleStatus s) {
 
 class ScheduleModel extends ScheduleEntity {
   const ScheduleModel({
-    required int id,
-    required DateTime? teachingDate,
-    required String? periodStartRaw,
-    required String? periodEndRaw,
-    required int periodStart,
-    required int periodEnd,
-    required String type,
-    required String subjectName,
-    required String classCode,
-    required String roomName,
-    required String? chapter,
-    required ScheduleStatus status,
-  }) : super(
-         id: id,
-         teachingDate: teachingDate,
-         periodStartRaw: periodStartRaw,
-         periodEndRaw: periodEndRaw,
-         periodStart: periodStart,
-         periodEnd: periodEnd,
-         type: type,
-         subjectName: subjectName,
-         classCode: classCode,
-         roomName: roomName,
-         chapter: chapter,
-         status: status,
-       );
+    required super.id,
+    required super.teachingDate,
+    required super.periodStartRaw,
+    required super.periodEndRaw,
+    required super.periodStart,
+    required super.periodEnd,
+    required super.type,
+    required super.subjectName,
+    required super.classCode,
+    required super.roomName,
+    required super.chapter,
+    required super.status,
+  });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
     return ScheduleModel(
