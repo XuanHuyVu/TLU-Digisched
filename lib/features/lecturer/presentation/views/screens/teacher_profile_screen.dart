@@ -81,11 +81,9 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            // ✅ Kiểm tra nếu là lỗi token hết hạn
             final errorMessage = snapshot.error.toString();
             if (errorMessage.contains('Token đã hết hạn') || 
                 errorMessage.contains('unauthorized')) {
-              // Tự động logout và chuyển về login
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _handleTokenExpired(context);
               });
@@ -114,7 +112,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
           }
 
           final profileNotifier = notifiers['profileNotifier'] as TeacherProfileNotifier;
-
           return ChangeNotifierProvider<TeacherProfileNotifier>.value(
             value: profileNotifier,
             builder: (builderContext, child) {
@@ -155,9 +152,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                                   backgroundColor: Colors.blue.shade300,
                                   backgroundImage:
                                       _avatarBase64 != null
-                                          ? MemoryImage(
-                                            base64Decode(_avatarBase64!),
-                                          )
+                                          ? MemoryImage(base64Decode(_avatarBase64!))
                                           : null,
                                   child:
                                       _avatarBase64 == null
@@ -330,12 +325,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                                   "Bộ môn",
                                   profile.department?.name ?? '',
                                 ),
-                                const Divider(height: 20),
-                                _buildInfoRow(
-                                  Icons.info,
-                                  "Trạng thái",
-                                  _mapStatus(profile.status),
-                                ),
                               ],
                             ),
                           ),
@@ -397,18 +386,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         "${date.year}";
   }
 
-  String _mapStatus(String? status) {
-    if (status == null) return "Chưa cập nhật";
-    switch (status.toUpperCase()) {
-      case "ACTIVE":
-        return "Đang công tác";
-      case "INACTIVE":
-        return "Ngừng công tác";
-      default:
-        return status;
-    }
-  }
-
   String _getInitials(String name) {
     if (name.trim().isEmpty) return "";
     final parts = name.trim().split(" ");
@@ -417,18 +394,13 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   }
 
   Future<void> _handleTokenExpired(BuildContext context) async {
-    // Xóa token và user data
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     await prefs.remove('user');
-    
     if (context.mounted) {
-      // Chuyển về màn hình login
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        '/login',
+      Navigator.of(context).pushNamedAndRemoveUntil('/login',
         (route) => false,
       );
-      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'),
