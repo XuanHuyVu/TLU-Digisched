@@ -1,84 +1,94 @@
 
 import '../../../../core/utils/period_helper.dart';
+import '../../../../core/enums/session_type.dart';
 
 enum ScheduleStatus { upcoming, ongoing, done, canceled, expired, unknown }
 
 class ScheduleEntity {
   final int id;
-  final DateTime? teachingDate;
-  final String? periodStartRaw;
-  final String? periodEndRaw;
-  final int periodStart;
-  final int periodEnd;
-  final String type;
+  final int? scheduleEntryId;
+  final DateTime? sessionDate;
+  final int? dayOfWeek;
+  final int startPeriod;
+  final int endPeriod;
+  final SessionType sessionType;
+  final int? roomId;
+  final String? roomCode;
+  final String? roomBuilding;
+  final String roomName;
+  final String? notes;
+  final ScheduleStatus status;
   final String subjectName;
   final String classCode;
-  final String roomName;
-  final String? chapter;
-  final ScheduleStatus status;
 
   const ScheduleEntity({
     required this.id,
-    required this.teachingDate,
-    required this.periodStartRaw,
-    required this.periodEndRaw,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.type,
+    this.scheduleEntryId,
+    required this.sessionDate,
+    this.dayOfWeek,
+    required this.startPeriod,
+    required this.endPeriod,
+    required this.sessionType,
+    this.roomId,
+    this.roomCode,
+    this.roomBuilding,
+    required this.roomName,
+    this.notes,
+    required this.status,
     required this.subjectName,
     required this.classCode,
-    required this.roomName,
-    required this.chapter,
-    required this.status,
   });
 
   int get periodsCount =>
-      (periodStart > 0 && periodEnd >= periodStart)
-          ? (periodEnd - periodStart + 1)
+      (startPeriod > 0 && endPeriod >= startPeriod)
+          ? (endPeriod - startPeriod + 1)
           : 1;
 
   String get periodText {
-    final a = periodStartRaw;
-    final b = periodEndRaw;
-    if ((a ?? '').isNotEmpty && (b ?? '').isNotEmpty) return '$a – $b';
-    if (periodStart > 0 && periodEnd > 0) {
-      return 'Tiết $periodStart – Tiết $periodEnd';
+    if (startPeriod > 0 && endPeriod > 0) {
+      return 'Tiết $startPeriod – Tiết $endPeriod';
     }
     return '- – -';
   }
 
   String get timeRange {
-    if (periodStart <= 0 || periodEnd <= 0) return '';
-    return periodTimeRange(periodStart, periodEnd);
+    if (startPeriod <= 0 || endPeriod <= 0) return '';
+    return periodTimeRange(startPeriod, endPeriod);
   }
 
   ScheduleEntity copyWith({
     int? id,
-    DateTime? teachingDate,
-    String? periodStartRaw,
-    String? periodEndRaw,
-    int? periodStart,
-    int? periodEnd,
-    String? type,
+    int? scheduleEntryId,
+    DateTime? sessionDate,
+    int? dayOfWeek,
+    int? startPeriod,
+    int? endPeriod,
+    SessionType? sessionType,
+    int? roomId,
+    String? roomCode,
+    String? roomBuilding,
+    String? roomName,
+    String? notes,
+    ScheduleStatus? status,
     String? subjectName,
     String? classCode,
-    String? roomName,
-    String? chapter,
-    ScheduleStatus? status,
   }) {
     return ScheduleEntity(
       id: id ?? this.id,
-      teachingDate: teachingDate ?? this.teachingDate,
-      periodStartRaw: periodStartRaw ?? this.periodStartRaw,
-      periodEndRaw: periodEndRaw ?? this.periodEndRaw,
-      periodStart: periodStart ?? this.periodStart,
-      periodEnd: periodEnd ?? this.periodEnd,
-      type: type ?? this.type,
+      scheduleEntryId: scheduleEntryId ?? this.scheduleEntryId,
+      sessionDate: sessionDate ?? this.sessionDate,
+      dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+      startPeriod: startPeriod ?? this.startPeriod,
+      endPeriod: endPeriod ?? this.endPeriod,
+      sessionType: sessionType ?? this.sessionType,
+      roomId: roomId ?? this.roomId,
+      roomCode: roomCode ?? this.roomCode,
+      roomBuilding: roomBuilding ?? this.roomBuilding,
+      roomName: roomName ?? this.roomName,
+      notes: notes ?? this.notes,
+      status: status ?? this.status,
       subjectName: subjectName ?? this.subjectName,
       classCode: classCode ?? this.classCode,
-      roomName: roomName ?? this.roomName,
-      chapter: chapter ?? this.chapter,
-      status: status ?? this.status,
     );
   }
 }

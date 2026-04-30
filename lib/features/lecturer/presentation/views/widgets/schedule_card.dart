@@ -166,7 +166,7 @@ class ScheduleCard extends StatelessWidget {
     if (item.status == ScheduleStatus.canceled) return ScheduleStatus.canceled;
 
     final now = DateTime.now();
-    final d = item.teachingDate;
+    final d = item.sessionDate;
     if (d == null) {
       return item.status == ScheduleStatus.unknown
           ? ScheduleStatus.upcoming
@@ -194,7 +194,7 @@ class ScheduleCard extends StatelessWidget {
 
   (bool, String?, DateTime?, DateTime?) _canCompleteNow() {
     final now = DateTime.now();
-    final d = item.teachingDate;
+    final d = item.sessionDate;
     if (d == null) return (false, 'Không xác định ngày học.', null, null);
     final today = DateTime(now.year, now.month, now.day);
     final thatDay = DateTime(d.year, d.month, d.day);
@@ -258,7 +258,7 @@ class ScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final header =
         item.timeRange.isNotEmpty
-            ? 'Tiết ${item.periodStart} → ${item.periodEnd} (${item.timeRange})'
+            ? 'Tiết ${item.startPeriod} → ${item.endPeriod} (${item.timeRange})'
             : item.periodText;
     final locked =
         item.status == ScheduleStatus.done ||
@@ -323,11 +323,6 @@ class ScheduleCard extends StatelessWidget {
                         fontSize: 16,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.classCode,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: <Widget>[
@@ -337,19 +332,9 @@ class ScheduleCard extends StatelessWidget {
                         const SizedBox(width: 14),
                         const Icon(Icons.menu_book_outlined, size: 16),
                         const SizedBox(width: 4),
-                        Text(item.type),
+                        Text(item.sessionType.displayName),
                       ],
                     ),
-                    if (item.chapter != null && item.chapter!.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: <Widget>[
-                          const Icon(Icons.notes_outlined, size: 16),
-                          const SizedBox(width: 4),
-                          Expanded(child: Text(item.chapter!)),
-                        ],
-                      ),
-                    ],
                     const SizedBox(height: 10),
                     if (showActions)
                       Row(
@@ -376,8 +361,7 @@ class ScheduleCard extends StatelessWidget {
                                   msg +=
                                       '\nCửa sổ cho phép: ${_formatHm(from)} → ${_formatHm(to)}';
                                 }
-                                if (reason?.contains('Chưa đến thời gian') ==
-                                    true) {
+                                if (reason?.contains('Chưa đến thời gian') == true) {
                                   await _showCustomDialog(
                                     context,
                                     title: 'Chưa đến thời gian',
@@ -386,8 +370,7 @@ class ScheduleCard extends StatelessWidget {
                                     icon: Icons.access_time,
                                     iconColor: const Color(0xFFFFA726),
                                   );
-                                } else if (reason?.contains('Quá thời gian') ==
-                                    true) {
+                                } else if (reason?.contains('Quá thời gian') == true) {
                                   await _showCustomDialog(
                                     context,
                                     title: 'Quá thời gian',
@@ -396,8 +379,7 @@ class ScheduleCard extends StatelessWidget {
                                     icon: Icons.error_outline,
                                     iconColor: const Color(0xFFE53935),
                                   );
-                                } else if (reason?.contains('ngày diễn ra') ==
-                                    true) {
+                                } else if (reason?.contains('ngày diễn ra') == true) {
                                   await _showCustomDialog(
                                     context,
                                     title: 'Không đúng ngày',

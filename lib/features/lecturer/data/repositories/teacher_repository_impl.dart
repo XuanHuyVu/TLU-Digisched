@@ -1,32 +1,18 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../../domain/entities/schedule_entity.dart';
 import '../../domain/entities/teacher_home_data_entity.dart';
 import '../../domain/repositories/teacher_repository.dart';
 import '../datasources/teacher_remote_datasource.dart';
 import '../models/schedule_model.dart';
 import '../models/teacher_model.dart';
+import '../../../../config/constants/api_endpoints.dart';
 
 class TeacherRepositoryImpl implements TeacherRepository {
   final TeacherRemoteDataSource remoteDataSource;
 
   TeacherRepositoryImpl({required this.remoteDataSource});
-
-  bool _sameDate(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
-  DateTime _mondayOfWeek(DateTime d) {
-    final weekday = d.weekday;
-    return DateTime(d.year, d.month, d.day,)
-        .subtract(Duration(days: weekday - 1));
-  }
-
-  DateTime _sundayOfWeek(DateTime d) {
-    final monday = _mondayOfWeek(d);
-    return monday.add(const Duration(days: 6));
-  }
-
-  int _sumPeriods(List<ScheduleModel> xs) =>
-      xs.fold(0, (acc, s) => acc + s.periodsCount);
 
   Future<int?> _getTeacherId() async {
     final prefs = await SharedPreferences.getInstance();
@@ -41,70 +27,22 @@ class TeacherRepositoryImpl implements TeacherRepository {
     if (teacherId == null) {
       throw Exception('Không tìm thấy teacherId. Hãy đăng nhập lại.');
     }
+    final prefs = await SharedPreferences.getInstance();
+    final teacherName = prefs.getString('fullName') ?? 'Giảng viên';
+    final teacherFaculty = prefs.getString('faculty') ?? '';
+    final teacher = TeacherModel(
+      id: teacherId,
+      name: teacherName,
+      faculty: teacherFaculty,
+    );
 
-    try {
-      final data = await remoteDataSource.fetchHomeData(teacherId);
-      final items = data['items'] ?? [];
-      final List<ScheduleModel> allSchedules = [];
-      for (final item in (items as List).whereType<Map<String, dynamic>>()) {
-        final schedule = ScheduleModel(
-          id: item['id'] ?? 0,
-          teachingDate: null,
-          periodStartRaw: null,
-          periodEndRaw: null,
-          periodStart: 0,
-          periodEnd: 0,
-          type: item['teachingMode'] ?? '',
-          subjectName: item['courseName'] ?? '',
-          classCode: item['sectionClassCode'] ?? '',
-          roomName: '',
-          chapter: null,
-          status: ScheduleStatus.upcoming,
-        );
-        allSchedules.add(schedule);
-      }
-
-      final now = DateTime.now();
-      final today = allSchedules.where((s) {
-        if (s.teachingDate == null) return false;
-        return _sameDate(s.teachingDate!, now);
-      }).toList();
-      final monday = _mondayOfWeek(now);
-      final sunday = _sundayOfWeek(now);
-      bool inWeek(DateTime d) => !d.isBefore(monday) && !d.isAfter(sunday);
-      final thisWeek = allSchedules.where((s) {
-        if (s.teachingDate == null) return false;
-        final d = DateTime(
-          s.teachingDate!.year,
-          s.teachingDate!.month,
-          s.teachingDate!.day,
-        );
-        return inWeek(d);
-      }).toList();
-
-      final periodsToday = _sumPeriods(today.cast<ScheduleModel>());
-      final periodsThisWeek = _sumPeriods(thisWeek.cast<ScheduleModel>());
-      final doneCount = today.where((s) => s.status == ScheduleStatus.done).length;
-      final percentCompleted = today.isEmpty ? 0 : ((doneCount / today.length) * 100).round();
-      final prefs = await SharedPreferences.getInstance();
-      final teacherName = prefs.getString('fullName') ?? 'Giảng viên';
-      final teacherFaculty = prefs.getString('faculty') ?? '';
-      final teacher = TeacherModel(
-        id: teacherId,
-        name: teacherName,
-        faculty: teacherFaculty,
-      );
-
-      return TeacherHomeDataEntity(
-        teacher: teacher,
-        periodsToday: periodsToday,
-        periodsThisWeek: periodsThisWeek,
-        percentCompleted: percentCompleted,
-        todaySchedules: today,
-      );
-    } catch (e) {
-      throw Exception('Không thể tải dữ liệu: $e');
-    }
+    return TeacherHomeDataEntity(
+      teacher: teacher,
+      periodsToday: 0,
+      periodsThisWeek: 0,
+      percentCompleted: 0,
+      todaySchedules: [],
+    );
   }
 
   @override
@@ -115,33 +53,45 @@ class TeacherRepositoryImpl implements TeacherRepository {
     }
 
     try {
-      final data = await remoteDataSource.fetchHomeData(teacherId);
-      final schedules = data['items'] ?? [];
       final List<ScheduleEntity> allSchedules = [];
+      final headers = await _getHeaders();
+      final schedulesUri = Uri.parse('${ApiEndpoints.baseUrl}/lecturer/schedules?page=0&size=1000');
+      final schedulesResponse = await http.get(schedulesUri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+      if (schedulesResponse.statusCode != 200) {
+        throw Exception('Failed to load schedules: ${schedulesResponse.statusCode}');
+      }
+      final schedulesData = jsonDecode(schedulesResponse.body);
+      final schedules = schedulesData['data']?['items'] ?? [];
       for (final schedule in (schedules as List).whereType<Map<String, dynamic>>()) {
         final scheduleId = schedule['id'] as int?;
         if (scheduleId == null) continue;
+        final status = schedule['status'] as String?;
+        if (status != 'OFFICIAL') continue;
+        
         try {
           final entries = await remoteDataSource.fetchScheduleEntries(scheduleId);
           for (final entry in entries) {
-            final scheduleEntity = ScheduleModel(
-              id: entry['id'] ?? 0,
-              teachingDate: null,
-              periodStartRaw: null,
-              periodEndRaw: null,
-              periodStart: entry['startPeriod'] ?? 0,
-              periodEnd: entry['endPeriod'] ?? 0,
-              type: entry['teachingMode'] ?? '',
-              subjectName: entry['courseName'] ?? '',
-              classCode: entry['sectionClassCode'] ?? '',
-              roomName: entry['roomCode'] ?? '',
-              chapter: null,
-              status: ScheduleStatus.upcoming,
-            );
-            allSchedules.add(scheduleEntity);
+            final entryId = entry['id'] as int?;
+            if (entryId == null) continue;
+            try {
+              final scheduleDetails = await remoteDataSource.fetchScheduleDetails(entryId);
+              for (final detail in scheduleDetails) {
+                final detailWithEntry = {
+                  ...detail,
+                  'subjectName': entry['courseName'],
+                  'classCode': entry['sectionClassCode'],
+                };
+                
+                final scheduleEntity = ScheduleModel.fromJson(detailWithEntry);
+                allSchedules.add(scheduleEntity);
+              }
+            } catch (e) {
+              // Continue processing other entries
+            }
           }
         } catch (e) {
-          throw Exception('Không thể tải lịch dạy: $e');
+          // Continue processing other schedules
         }
       }
       
@@ -149,6 +99,19 @@ class TeacherRepositoryImpl implements TeacherRepository {
     } catch (e) {
       throw Exception('Không thể tải lịch dạy: $e');
     }
+  }
+
+  static Future<Map<String, String>> _getHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token')?.trim();
+    if (token == null) {
+      throw Exception('Không tìm thấy token, vui lòng đăng nhập lại');
+    }
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
   }
 
   @override

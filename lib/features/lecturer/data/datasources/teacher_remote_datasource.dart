@@ -26,26 +26,26 @@ class TeacherRemoteDataSource {
     };
   }
 
-  Future<Map<String, dynamic>> fetchHomeData(int teacherId) async {
-    try {
-      final headers = await _getHeaders();
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/lecturer/schedules');
+  // TODO: Temporarily commented out - statistics endpoint not ready
+  // Future<Map<String, dynamic>> fetchHomeData(int teacherId) async {
+  //   try {
+  //     final headers = await _getHeaders();
+  //     final uri = Uri.parse('${ApiEndpoints.baseUrl}/lecturer/schedules/statistics');
 
-      final response = await _client
-          .get(uri, headers: headers)
-          .timeout(const Duration(seconds: 15));
+  //     final response = await _client
+  //         .get(uri, headers: headers)
+  //         .timeout(const Duration(seconds: 15));
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final items = data['data']?['items'] ?? [];
-        return {'items': items};
-      } else {
-        throw Exception('Failed to load schedules: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Không thể tải lịch dạy: $e');
-    }
-  }
+  //     if (response.statusCode == 200) {
+  //       final data = jsonDecode(response.body);
+  //       return data['data'] ?? {};
+  //     } else {
+  //       throw Exception('Failed to load statistics: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Không thể tải thống kê: $e');
+  //   }
+  // }
 
   Future<List<Map<String, dynamic>>> fetchScheduleEntries(int scheduleId) async {
     try {
@@ -65,6 +65,25 @@ class TeacherRemoteDataSource {
       }
     } catch (e) {
       throw Exception('Không thể tải chi tiết lịch dạy: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchScheduleDetails(int entryId) async {
+    try {
+      final headers = await _getHeaders();
+      final uri = Uri.parse('${ApiEndpoints.baseUrl}/lecturer/schedules/entries/$entryId/schedule-details');
+      final response = await _client
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final details = data['data'] ?? [];
+        return List<Map<String, dynamic>>.from(details);
+      } else {
+        throw Exception('Failed to load schedule details: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Không thể tải lịch dạy chi tiết: $e');
     }
   }
 

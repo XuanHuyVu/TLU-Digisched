@@ -265,7 +265,7 @@ class _DayTab extends StatelessWidget {
     final today = DateTime.now();
     final todaySchedules =
         notifier.schedules.where((s) {
-          final scheduleDate = s.teachingDate;
+          final scheduleDate = s.sessionDate;
           if (scheduleDate == null) return false;
           final sameDay =
               scheduleDate.year == today.year &&
@@ -312,8 +312,7 @@ class _DayTab extends StatelessWidget {
         ...todaySchedules.map(
           (e) => ScheduleCard(
             item: e,
-            onMarkDone:
-                () => context.read<TeacherScheduleNotifier>().markDone(e),
+            onMarkDone: () => context.read<TeacherScheduleNotifier>().markDone(e),
             onRequestCancel:
                 (reason, fileUrl) =>
                     context.read<TeacherScheduleNotifier>().requestCancel(
@@ -323,11 +322,35 @@ class _DayTab extends StatelessWidget {
                     ),
           ),
         ),
-
         if (todaySchedules.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 40),
-            child: Center(child: Text('Không có lịch cho ngày này.')),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.event_busy_outlined,
+                    size: 48,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Không có lịch dạy hôm nay',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Lịch có thể chưa được chính thức hóa',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
       ],
     );
@@ -336,13 +359,9 @@ class _DayTab extends StatelessWidget {
 
 class _WeekTab extends StatelessWidget {
   const _WeekTab();
-
   List<DateTime> _weekFromMonday(DateTime base) {
     final monday = base.subtract(Duration(days: base.weekday - 1));
-    return List.generate(
-      7,
-      (i) => _dateOnly(DateTime(monday.year, monday.month, monday.day + i)),
-    );
+    return List.generate(7, (i) => _dateOnly(DateTime(monday.year, monday.month, monday.day + i)));
   }
 
   @override
@@ -352,7 +371,7 @@ class _WeekTab extends StatelessWidget {
     final weekDays = _weekFromMonday(today);
     final Map<DateTime, List<ScheduleEntity>> grouped = {};
     for (final schedule in notifier.schedules) {
-      final scheduleDate = schedule.teachingDate;
+      final scheduleDate = schedule.sessionDate;
       if (scheduleDate != null) {
         final dateOnly = _dateOnly(scheduleDate);
         if (weekDays.contains(dateOnly)) {
@@ -360,17 +379,38 @@ class _WeekTab extends StatelessWidget {
         }
       }
     }
-
     final daysWithSchedules =
-        weekDays.where((day) => (grouped[day] ?? []).isNotEmpty).toList();
-
+    weekDays.where((day) => (grouped[day] ?? []).isNotEmpty).toList();
     if (daysWithSchedules.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(
-            'Tuần này không có lịch.',
-            style: TextStyle(color: Colors.black.withAlpha(178)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.date_range_outlined,
+                size: 56,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tuần này không có lịch dạy',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Lịch có thể chưa được chính thức hóa',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -412,24 +452,54 @@ class _WeekTab extends StatelessWidget {
   }
 }
 
-
 class _SemesterTab extends StatelessWidget {
   const _SemesterTab();
 
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<TeacherScheduleNotifier>();
-    
-    // Since API doesn't provide teachingDate, just display all schedules
-    final schedules = notifier.schedules;
+    final Map<DateTime, List<ScheduleEntity>> grouped = {};
+    for (final schedule in notifier.schedules) {
+      final scheduleDate = schedule.sessionDate;
+      if (scheduleDate != null) {
+        final dateOnly = _dateOnly(scheduleDate);
+        grouped.putIfAbsent(dateOnly, () => []).add(schedule);
+      }
+    }
 
-    if (schedules.isEmpty) {
+    final sortedDates = grouped.keys.toList()..sort();
+    
+    if (sortedDates.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(
-            'Không có lịch dạy trong kỳ này.',
-            style: TextStyle(color: Colors.black.withAlpha(178)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 64,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Chưa có lịch dạy',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Lịch dạy chưa được chính thức hóa.\nVui lòng liên hệ phòng Đào tạo để biết thêm chi tiết.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -437,19 +507,41 @@ class _SemesterTab extends StatelessWidget {
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      children: schedules.map((schedule) {
-        return ScheduleCard(
-          item: schedule,
-          onMarkDone:
-              () => context.read<TeacherScheduleNotifier>().markDone(schedule),
-          onRequestCancel:
-              (reason, fileUrl) =>
-                  context.read<TeacherScheduleNotifier>().requestCancel(
-                    detailId: schedule.id,
-                    reason: reason,
-                    fileUrl: fileUrl,
+      children: sortedDates.expand((date) {
+        final list = grouped[date] ?? [];
+        return [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: Column(
+                children: [
+                  Text(
+                    '${_weekdayFull(date)}, ${_ddMMyyyy(date)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: _brandBlue,
+                      fontSize: 14,
+                    ),
                   ),
-        );
+                ],
+              ),
+            ),
+          ),
+          ...list.map(
+            (e) => ScheduleCard(
+              item: e,
+              onMarkDone:
+                  () => context.read<TeacherScheduleNotifier>().markDone(e),
+              onRequestCancel:
+                  (reason, fileUrl) =>
+                      context.read<TeacherScheduleNotifier>().requestCancel(
+                        detailId: e.id,
+                        reason: reason,
+                        fileUrl: fileUrl,
+                      ),
+            ),
+          ),
+        ];
       }).toList(),
     );
   }
