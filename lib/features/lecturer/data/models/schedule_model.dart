@@ -1,4 +1,5 @@
 import '../../domain/entities/schedule_entity.dart';
+import '../../../../core/enums/session_type.dart';
 
 ScheduleStatus statusFromApi(String? s) {
   switch ((s ?? '').toUpperCase()) {
@@ -42,59 +43,46 @@ String statusToApi(ScheduleStatus s) {
 class ScheduleModel extends ScheduleEntity {
   const ScheduleModel({
     required super.id,
-    required super.teachingDate,
-    required super.periodStartRaw,
-    required super.periodEndRaw,
-    required super.periodStart,
-    required super.periodEnd,
-    required super.type,
+    super.scheduleEntryId,
+    required super.sessionDate,
+    super.dayOfWeek,
+    required super.startPeriod,
+    required super.endPeriod,
+    required super.sessionType,
+    super.roomId,
+    super.roomCode,
+    super.roomBuilding,
+    required super.roomName,
+    super.notes,
+    required super.status,
     required super.subjectName,
     required super.classCode,
-    required super.roomName,
-    required super.chapter,
-    required super.status,
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
+    // Parse sessionDate từ API response
+    DateTime? parsedDate;
+    if (json['sessionDate'] != null) {
+      parsedDate = DateTime.tryParse(json['sessionDate']);
+    }
+    
     return ScheduleModel(
       id: json['id'] ?? 0,
-      teachingDate:
-          json['teachingDate'] != null
-              ? DateTime.tryParse(json['teachingDate'])
-              : null,
-      periodStartRaw: json['periodStartRaw'],
-      periodEndRaw: json['periodEndRaw'],
-      periodStart: json['periodStart'] ?? 0,
-      periodEnd: json['periodEnd'] ?? 0,
-      type: json['type'] ?? '',
+      scheduleEntryId: json['scheduleEntryId'],
+      sessionDate: parsedDate,
+      dayOfWeek: json['dayOfWeek'],
+      startPeriod: json['startPeriod'] ?? 0,
+      endPeriod: json['endPeriod'] ?? 0,
+      sessionType: SessionType.fromString(json['sessionType']),
+      roomId: json['roomId'],
+      roomCode: json['roomCode'],
+      roomBuilding: json['roomBuilding'],
+      roomName: json['roomName'] ?? '',
+      notes: json['notes'],
+      status: statusFromApi(json['status']),
+      // Thông tin từ entry (được thêm vào khi gọi API)
       subjectName: json['subjectName'] ?? '',
       classCode: json['classCode'] ?? '',
-      roomName: json['roomName'] ?? '',
-      chapter: json['chapter'],
-      status: statusFromApi(json['status']),
-    );
-  }
-
-  static ScheduleModel fromSectionDetail({
-    required Map<String, dynamic> section,
-    required Map<String, dynamic> detail,
-  }) {
-    return ScheduleModel(
-      id: detail['id'] ?? 0,
-      teachingDate:
-          detail['teachingDate'] != null
-              ? DateTime.tryParse(detail['teachingDate'])
-              : null,
-      periodStartRaw: detail['periodStartRaw'],
-      periodEndRaw: detail['periodEndRaw'],
-      periodStart: detail['periodStart'] ?? 0,
-      periodEnd: detail['periodEnd'] ?? 0,
-      type: detail['type'] ?? section['type'] ?? '',
-      subjectName: section['subjectName'] ?? '',
-      classCode: section['classCode'] ?? '',
-      roomName: detail['roomName'] ?? '',
-      chapter: detail['chapter'],
-      status: statusFromApi(detail['status']),
     );
   }
 }

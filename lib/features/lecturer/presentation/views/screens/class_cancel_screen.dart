@@ -117,7 +117,7 @@ class _ClassCancelScreenState extends State<ClassCancelScreen> {
                 children: [
                   Text(
                     widget.item.timeRange.isNotEmpty
-                        ? 'Tiết ${widget.item.periodStart} – ${widget.item.periodEnd} (${widget.item.timeRange})'
+                        ? 'Tiết ${widget.item.startPeriod} – ${widget.item.endPeriod} (${widget.item.timeRange})'
                         : widget.item.periodText,
                     style: const TextStyle(
                       fontSize: 16,
