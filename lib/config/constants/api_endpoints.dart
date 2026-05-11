@@ -1,5 +1,5 @@
 class ApiEndpoints {
-  static const String baseUrl = 'http://172.30.208.1:8080/api/v1';
+  static const String baseUrl = 'http://172.31.240.1:8080/api/v1';
   static const String login = '$baseUrl/auth/login';
   static const String teacherNotifications = '$baseUrl/teacher/notifications';
   static const String teacherNotificationsRead = '$baseUrl/teacher/notifications/read/';

@@ -29,7 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (userRole == UserRole.student) {
         final scheduleVM = context.read<ScheduleViewModel>();
         scheduleVM.updateToken(authNotifier.user?.token ?? "");
-        scheduleVM.loadSchedules();
       }
       if (userRole == UserRole.lecturer) {
         if (mounted) Navigator.of(context).pushReplacementNamed(AppRoutes.teacherHome);

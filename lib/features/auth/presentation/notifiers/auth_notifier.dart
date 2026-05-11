@@ -61,22 +61,14 @@ class AuthNotifier extends ChangeNotifier {
       if (_user != null && _user!.token.isNotEmpty) {
         _isTokenValid = TokenValidator.isTokenValid(_user!.token);
         if (!_isTokenValid) {
-          debugPrint('❌ Token is expired or invalid');
           _user = null;
           await logoutUseCase();
-        } else {
-          debugPrint('✅ Token is valid');
-          if (TokenValidator.isTokenExpiringSoon(_user!.token)) {
-            debugPrint('⚠️ Token expiring soon!');
-          }
         }
       } else {
-        debugPrint('❌ No user or empty token found in storage');
         _user = null;
         _isTokenValid = false;
       }
     } catch (e) {
-      debugPrint('❌ Error loading user from storage: $e');
       _user = null;
       _isTokenValid = false;
     }
