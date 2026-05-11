@@ -9,5 +9,5 @@ class ApiEndpoints {
   static const String studentNotifications = '$baseUrl/student/notifications';
   static const String studentNotificationsRead = '$baseUrl/student/notifications/read/';
   static const String studentProfile = '$baseUrl/student/profile';
-  static const String teacherStats = '';
+  static const String lecturerStatistics = '$baseUrl/lecturer/statistics';
 }
