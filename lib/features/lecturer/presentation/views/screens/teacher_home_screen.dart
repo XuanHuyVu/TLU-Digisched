@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tlu_digisched/features/lecturer/presentation/views/screens/teacher_stat_screen.dart';
 import 'package:tlu_digisched/shared/extensions/date_extensions.dart';
 import '../../notifiers/teacher_home_notifier.dart';
 import '../../notifiers/teacher_notification_notifier.dart';
-import '../../notifiers/teacher_schedule_notifier.dart';
-import '../../notifiers/teacher_service_locator.dart';
 import 'teacher_profile_screen.dart';
 import 'teacher_notification_screen.dart';
 import '../widgets/schedule_card.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/stats_panel.dart';
 import 'teacher_schedule_screen.dart';
-import 'teacher_stat_screen.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -23,79 +20,44 @@ class TeacherHomeScreen extends StatefulWidget {
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _index = 0;
-  late Future<Map<String, dynamic>> _initFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _initFuture = _initializeNotifiers();
-  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _initFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        
-        if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(child: Text("Lỗi: ${snapshot.error}")),
-          );
-        }
-        
-        final notifiers = snapshot.data;
-        if (notifiers == null) {
-          return const Scaffold(
-            body: Center(child: Text("Không thể khởi tạo dữ liệu")),
-          );
-        }
-        
-        return MultiProvider(
-          providers: [
-            ChangeNotifierProvider.value(
-              value: notifiers['homeNotifier'] as TeacherHomeNotifier,
-            ),
-            ChangeNotifierProvider.value(
-              value: notifiers['scheduleNotifier'] as TeacherScheduleNotifier,
-            ),
-            ChangeNotifierProvider.value(
-              value: notifiers['notificationNotifier'] as TeacherNotificationNotifier,
-            ),
-          ],
-          child: Scaffold(
-            body: IndexedStack(
-              index: _index,
-              children: [
-                _HomeTab(onSeeAll: () => setState(() => _index = 1)),
-                const TeacherScheduleScreen(),
-                const _StatsTab(),
-                const _ProfileTab(),
-              ],
-            ),
-            bottomNavigationBar: TeacherBottomNavBar(
-              currentIndex: _index,
-              onTap: (i) => setState(() => _index = i),
-            ),
-          ),
-        );
-      },
+    return Scaffold(
+      body: IndexedStack(
+        index: _index,
+        children: [
+          _HomeTab(onSeeAll: () => setState(() => _index = 1)),
+          const TeacherScheduleScreen(),
+          const _StatsTab(),
+          const _ProfileTab(),
+        ],
+      ),
+      bottomNavigationBar: TeacherBottomNavBar(
+        currentIndex: _index,
+        onTap: (i) => setState(() => _index = i),
+      ),
     );
-  }
-
-  Future<Map<String, dynamic>> _initializeNotifiers() async {
-    final prefs = await SharedPreferences.getInstance();
-    return await TeacherServiceLocator.setup(prefs);
   }
 }
 
-class _HomeTab extends StatelessWidget {
+class _HomeTab extends StatefulWidget {
   final VoidCallback onSeeAll;
   const _HomeTab({required this.onSeeAll});
+
+  @override
+  State<_HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<_HomeTab> {
+  @override
+  void initState() {
+    super.initState();
+    // Load home data when tab is first displayed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TeacherHomeNotifier>().load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

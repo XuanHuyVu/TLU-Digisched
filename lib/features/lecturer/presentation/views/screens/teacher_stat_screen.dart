@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../notifiers/teacher_service_locator.dart';
 import '../../notifiers/teacher_stats_notifier.dart';
+
+const _brandBlue = Color(0xFF4A90E2);
 
 class TeacherStatScreen extends StatefulWidget {
   const TeacherStatScreen({super.key});
@@ -12,146 +12,332 @@ class TeacherStatScreen extends StatefulWidget {
 }
 
 class _TeacherStatScreenState extends State<TeacherStatScreen> {
-  late Future<Map<String, dynamic>> _initFuture;
-
   @override
   void initState() {
     super.initState();
-    _initFuture = _initializeNotifiers();
+    // Load stats lazily after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TeacherStatsNotifier>().load();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _initFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError) return Center(child: Text("Lỗi: ${snapshot.error}"));
-          final notifiers = snapshot.data;
-          if (notifiers == null) return const Center(child: Text("Không thể khởi tạo dữ liệu"));
-          final statsNotifier = notifiers['statsNotifier'] as TeacherStatsNotifier;
-          return ChangeNotifierProvider.value(
-            value: statsNotifier,
-            child: Consumer<TeacherStatsNotifier>(
-              builder: (context, notifier, child) {
-                if (notifier.loading) return const Center(child: CircularProgressIndicator());
-                if (notifier.error != null) return Center(child: Text("Lỗi: ${notifier.error}"));
-                final stat = notifier.stats;
-                if (stat == null) return const Center(child: Text("Không có dữ liệu"));
-                final completionRate = ((stat.taughtHours + stat.makeUpHours) / stat.totalHours * 100).toStringAsFixed(0);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      color: Colors.blue[600],
-                      child: const Center(
-                        child: Text(
-                          "Thống kê lịch dạy",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+      backgroundColor: Colors.grey[50],
+      body: SafeArea(
+        child: Consumer<TeacherStatsNotifier>(
+          builder: (context, notifier, child) {
+            if (notifier.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (notifier.error != null) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Không thể tải thống kê',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[400],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    "${stat.semesterName} - ${stat.teacherName}",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  GridView.count(
-                                    crossAxisCount: 2,
-                                    shrinkWrap: true,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    children: [
-                                      _buildStatCard(
-                                        "${stat.taughtHours}",
-                                        "Giờ đã dạy",
-                                      ),
-                                      _buildStatCard(
-                                        "${stat.makeUpHours}",
-                                        "Giờ dạy bù",
-                                      ),
-                                      _buildStatCard(
-                                        "${stat.notTaughtHours}",
-                                        "Giờ nghỉ",
-                                      ),
-                                      _buildStatCard(
-                                        "$completionRate%",
-                                        "Tỷ lệ hoàn thành",
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 8),
+                      Text(
+                        notifier.error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () => notifier.load(),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Thử lại'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _brandBlue,
+                          foregroundColor: Colors.white,
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final stat = notifier.stats;
+            if (stat == null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.analytics_outlined, size: 64, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Chưa có dữ liệu thống kê',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
-                );
-              },
-            ),
-          );
-        },
+                ),
+              );
+            }
+
+            final completionRate = stat.totalHours > 0
+                ? ((stat.taughtHours + stat.makeUpHours) / stat.totalHours * 100)
+                : 0.0;
+
+            return Column(
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: _brandBlue,
+                    boxShadow: [
+                      BoxShadow(
+                        color: _brandBlue.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'THỐNG KÊ GIẢNG DẠY',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        stat.semesterName,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Content
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () => notifier.load(),
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        // Teacher Info Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 28,
+                                backgroundColor: _brandBlue.withOpacity(0.1),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 32,
+                                  color: _brandBlue,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      stat.teacherName,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Giảng viên',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Stats Grid
+                        GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.3,
+                          children: [
+                            _buildStatCard(
+                              icon: Icons.check_circle_outline,
+                              value: '${stat.taughtHours.toInt()}',
+                              label: 'Giờ đã dạy',
+                              color: const Color(0xFF43A047),
+                            ),
+                            _buildStatCard(
+                              icon: Icons.schedule,
+                              value: '${stat.totalHours.toInt()}',
+                              label: 'Tổng giờ',
+                              color: _brandBlue,
+                            ),
+                            _buildStatCard(
+                              icon: Icons.replay,
+                              value: '${stat.makeUpHours.toInt()}',
+                              label: 'Giờ dạy bù',
+                              color: const Color(0xFFFF9800),
+                            ),
+                            _buildStatCard(
+                              icon: Icons.event_busy,
+                              value: '${stat.notTaughtHours.toInt()}',
+                              label: 'Giờ nghỉ',
+                              color: const Color(0xFFF44336),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Completion Progress Card
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [_brandBlue, _brandBlue.withOpacity(0.8)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _brandBlue.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Tỷ lệ hoàn thành',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                '${completionRate.toStringAsFixed(1)}%',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: LinearProgressIndicator(
+                                  value: completionRate / 100,
+                                  backgroundColor: Colors.white.withOpacity(0.3),
+                                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                  minHeight: 8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  Future<Map<String, dynamic>> _initializeNotifiers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final notifiers = await TeacherServiceLocator.setup(prefs);
-    final statsNotifier = notifiers['statsNotifier'] as TeacherStatsNotifier;
-    await statsNotifier.load();
-    return notifiers;
-  }
-
-  Widget _buildStatCard(String value, String label) {
+  Widget _buildStatCard({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 32, color: color),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              color: color,
             ),
-            const SizedBox(height: 4),
-            Text(label, style: const TextStyle(color: Colors.black54)),
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

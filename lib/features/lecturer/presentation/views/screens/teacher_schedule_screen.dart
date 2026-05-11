@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../domain/entities/schedule_entity.dart';
 import '../../notifiers/teacher_schedule_notifier.dart';
-import '../../notifiers/teacher_service_locator.dart';
 import '../widgets/schedule_card.dart';
 
 const _brandBlue = Color(0xFF4A90E2);
@@ -32,70 +30,29 @@ class TeacherScheduleScreen extends StatefulWidget {
   State<TeacherScheduleScreen> createState() => _TeacherScheduleScreenState();
 }
 
-class _TeacherScheduleScreenState extends State<TeacherScheduleScreen>
-    with TickerProviderStateMixin {
-  late Future<Map<String, dynamic>> _initFuture;
+class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with TickerProviderStateMixin {
   late TabController _tabController;
-  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _initFuture = _initializeNotifiers();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      _tabController = TabController(length: 3, vsync: this);
-      _initialized = true;
-    }
+    _tabController = TabController(length: 4, vsync: this);
+    
+    // Load schedules when screen is first opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TeacherScheduleNotifier>().load();
+    });
   }
 
   @override
   void dispose() {
-    if (_initialized) {
-      _tabController.dispose();
-    }
+    _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _initFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        
-        if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(child: Text("Lỗi: ${snapshot.error}")),
-          );
-        }
-        
-        final notifiers = snapshot.data;
-        if (notifiers == null) {
-          return const Scaffold(
-            body: Center(child: Text("Không thể khởi tạo dữ liệu")),
-          );
-        }
-        
-        return ChangeNotifierProvider.value(
-          value: notifiers['scheduleNotifier'] as TeacherScheduleNotifier,
-          child: _Body(tabController: _tabController),
-        );
-      },
-    );
-  }
-
-  Future<Map<String, dynamic>> _initializeNotifiers() async {
-    final prefs = await SharedPreferences.getInstance();
-    return await TeacherServiceLocator.setup(prefs);
+    return _Body(tabController: _tabController);
   }
 }
 
@@ -109,15 +66,6 @@ class _Body extends StatefulWidget {
 }
 
 class _BodyState extends State<_Body> {
-  @override
-  void initState() {
-    super.initState();
-    // Load schedules when screen is opened
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TeacherScheduleNotifier>().load();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<TeacherScheduleNotifier>();
@@ -167,6 +115,7 @@ class _BodyState extends State<_Body> {
                     Tab(text: 'Hôm nay'),
                     Tab(text: 'Tuần này'),
                     Tab(text: 'Toàn kỳ'),
+                    Tab(text: 'Học phần'),
                   ],
                 ),
               ),
@@ -176,7 +125,7 @@ class _BodyState extends State<_Body> {
           Expanded(
             child: TabBarView(
               controller: widget.tabController,
-              children: const [_DayTab(), _WeekTab(), _SemesterTab()],
+              children: const [_DayTab(), _WeekTab(), _SemesterTab(), _CoursesTab()],
             ),
           ),
         ],
@@ -543,6 +492,295 @@ class _SemesterTab extends StatelessWidget {
           ),
         ];
       }).toList(),
+    );
+  }
+}
+
+class _CoursesTab extends StatelessWidget {
+  const _CoursesTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final notifier = context.watch<TeacherScheduleNotifier>();
+    
+    // Group schedules by course (classCode + subjectName)
+    final Map<String, List<ScheduleEntity>> courseGroups = {};
+    for (final schedule in notifier.schedules) {
+      final key = '${schedule.classCode}_${schedule.subjectName}';
+      courseGroups.putIfAbsent(key, () => []).add(schedule);
+    }
+
+    if (courseGroups.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.school_outlined,
+                size: 64,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Chưa có học phần',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Chưa có học phần nào được phân công.\nVui lòng liên hệ bộ môn để biết thêm chi tiết.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final courses = courseGroups.entries.map((entry) {
+      final schedules = entry.value;
+      final first = schedules.first;
+      final totalSessions = schedules.length;
+      final completedSessions = schedules.where((s) => s.status == ScheduleStatus.done).length;
+      final progress = totalSessions > 0 ? (completedSessions / totalSessions * 100) : 0.0;
+      
+      return {
+        'subjectName': first.subjectName,
+        'classCode': first.classCode,
+        'sessionType': first.sessionType.displayName,
+        'totalSessions': totalSessions,
+        'completedSessions': completedSessions,
+        'progress': progress,
+        'schedules': schedules,
+      };
+    }).toList();
+
+    // Sort by subject name
+    courses.sort((a, b) => (a['subjectName'] as String).compareTo(b['subjectName'] as String));
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      itemCount: courses.length,
+      itemBuilder: (context, index) {
+        final course = courses[index];
+        return _CourseCard(course: course);
+      },
+    );
+  }
+}
+
+class _CourseCard extends StatelessWidget {
+  final Map<String, dynamic> course;
+
+  const _CourseCard({required this.course});
+
+  @override
+  Widget build(BuildContext context) {
+    final subjectName = course['subjectName'] as String;
+    final classCode = course['classCode'] as String;
+    final sessionType = course['sessionType'] as String;
+    final totalSessions = course['totalSessions'] as int;
+    final completedSessions = course['completedSessions'] as int;
+    final progress = course['progress'] as double;
+    final schedules = course['schedules'] as List<ScheduleEntity>;
+    final isCompleted = completedSessions == totalSessions;
+    final statusColor = isCompleted ? const Color(0xFF43A047) : _brandBlue;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 6,
+              decoration: BoxDecoration(
+                color: statusColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            subjectName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        if (isCompleted)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle, size: 14, color: Color(0xFF43A047)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Hoàn thành',
+                                  style: TextStyle(
+                                    color: Color(0xFF43A047),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.class_outlined, size: 16, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          classCode,
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Icon(Icons.menu_book_outlined, size: 16, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          sessionType,
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Tiến độ',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$completedSessions/$totalSessions buổi',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.grey.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: progress / 100,
+                                  backgroundColor: Colors.grey.shade200,
+                                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                                  minHeight: 8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '${progress.toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // InkWell(
+                    //   onTap: () {
+                    //     Navigator.of(context).push(
+                    //       MaterialPageRoute(
+                    //         builder: (context) => CourseDetailScreen(
+                    //           courseName: subjectName,
+                    //           classCode: classCode,
+                    //           sessionType: sessionType,
+                    //           schedules: schedules,
+                    //         ),
+                    //       ),
+                    //     );
+                    //   },
+                    //   child: Container(
+                    //     padding: const EdgeInsets.symmetric(vertical: 8),
+                    //     decoration: BoxDecoration(
+                    //       border: Border.all(color: _brandBlue),
+                    //       borderRadius: BorderRadius.circular(8),
+                    //     ),
+                    //     child: const Row(
+                    //       mainAxisAlignment: MainAxisAlignment.center,
+                    //       children: [
+                    //         Icon(Icons.visibility_outlined, size: 16, color: _brandBlue),
+                    //         SizedBox(width: 6),
+                    //         Text(
+                    //           'Xem chi tiết',
+                    //           style: TextStyle(
+                    //             color: _brandBlue,
+                    //             fontWeight: FontWeight.w700,
+                    //             fontSize: 13,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

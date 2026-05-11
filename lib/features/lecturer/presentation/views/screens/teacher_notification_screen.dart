@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../domain/entities/notification_entity.dart';
 import '../../notifiers/teacher_notification_notifier.dart';
-import '../../notifiers/teacher_service_locator.dart';
 
 class TeacherNotificationScreen extends StatefulWidget {
   const TeacherNotificationScreen({super.key});
@@ -15,120 +13,85 @@ class TeacherNotificationScreen extends StatefulWidget {
 }
 
 class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
-  late Future<Map<String, dynamic>> _initFuture;
-
   @override
   void initState() {
     super.initState();
-    _initFuture = _initializeNotifiers();
-  }
-
-  Future<Map<String, dynamic>> _initializeNotifiers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final notifiers = await TeacherServiceLocator.setup(prefs);
-    final notificationNotifier = notifiers['notificationNotifier'] as TeacherNotificationNotifier;
-    await notificationNotifier.load();
-    return notifiers;
+    // Load notifications when screen is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TeacherNotificationNotifier>().load();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _initFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(child: Text('Lỗi: ${snapshot.error}')),
-          );
-        }
-
-        final notifiers = snapshot.data;
-        if (notifiers == null) {
-          return const Scaffold(
-            body: Center(child: Text('Không thể khởi tạo dữ liệu')),
-          );
-        }
-
-        final notificationNotifier = notifiers['notificationNotifier'] as TeacherNotificationNotifier;
-        return DefaultTabController(
-          length: 3,
-          child: ChangeNotifierProvider<TeacherNotificationNotifier>.value(
-            value: notificationNotifier,
-            child: Scaffold(
-              appBar: AppBar(
-                backgroundColor: const Color(0xFF4A90E2),
-                elevation: 0,
-                leading: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  splashRadius: 24,
-                  tooltip: 'Quay lại Trang Chủ',
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                centerTitle: true,
-                title: Text(
-                  'Thông báo',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-                bottom: const TabBar(
-                  indicatorColor: Colors.white,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white70,
-                  tabs: [
-                    Tab(text: 'Tất cả'),
-                    Tab(text: 'Đã đọc'),
-                    Tab(text: 'Chưa đọc'),
-                  ],
-                ),
-              ),
-              body: Consumer<TeacherNotificationNotifier>(
-                builder: (context, notifier, child) {
-                  if (notifier.loading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (notifier.error != null) {
-                    return Center(child: Text('Lỗi: ${notifier.error}'));
-                  }
-
-                  final all = notifier.notifications;
-                  final read = all.where((n) => n.isRead).toList();
-                  final unread = all.where((n) => !n.isRead).toList();
-                  return TabBarView(
-                    children: [
-                      _NotificationListView(
-                        notifications: all,
-                        notifier: notifier,
-                      ),
-                      _NotificationListView(
-                        notifications: read,
-                        notifier: notifier,
-                      ),
-                      _NotificationListView(
-                        notifications: unread,
-                        notifier: notifier,
-                      ),
-                    ],
-                  );
-                },
-              ),
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF4A90E2),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+              size: 28,
+            ),
+            splashRadius: 24,
+            tooltip: 'Quay lại Trang Chủ',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          centerTitle: true,
+          title: Text(
+            'Thông báo',
+            style: GoogleFonts.montserrat(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
             ),
           ),
-        );
-      },
+          bottom: const TabBar(
+            indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            tabs: [
+              Tab(text: 'Tất cả'),
+              Tab(text: 'Đã đọc'),
+              Tab(text: 'Chưa đọc'),
+            ],
+          ),
+        ),
+        body: Consumer<TeacherNotificationNotifier>(
+          builder: (context, notifier, child) {
+            if (notifier.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (notifier.error != null) {
+              return Center(child: Text('Lỗi: ${notifier.error}'));
+            }
+
+            final all = notifier.notifications;
+            final read = all.where((n) => n.isRead).toList();
+            final unread = all.where((n) => !n.isRead).toList();
+            return TabBarView(
+              children: [
+                _NotificationListView(
+                  notifications: all,
+                  notifier: notifier,
+                ),
+                _NotificationListView(
+                  notifications: read,
+                  notifier: notifier,
+                ),
+                _NotificationListView(
+                  notifications: unread,
+                  notifier: notifier,
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

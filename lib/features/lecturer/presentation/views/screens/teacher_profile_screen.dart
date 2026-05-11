@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../services/avatar_service_mobile.dart';
 import '../../../../../shared/widgets/settings_section.dart';
 import '../../notifiers/teacher_profile_notifier.dart';
-import '../../notifiers/teacher_service_locator.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   const TeacherProfileScreen({super.key});
@@ -22,15 +21,11 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   void initState() {
     super.initState();
     _loadAvatar();
-  }
-
-  Future<Map<String, dynamic>> _initializeNotifiers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final notifiers = await TeacherServiceLocator.setup(prefs);
-    final profileNotifier =
-        notifiers['profileNotifier'] as TeacherProfileNotifier;
-    await profileNotifier.load();
-    return notifiers;
+    
+    // Load profile when screen is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TeacherProfileNotifier>().load();
+    });
   }
 
   Future<void> _loadAvatar() async {
@@ -74,14 +69,14 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(backgroundColor: const Color(0xFF4A90E2), elevation: 0),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _initializeNotifiers(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: Consumer<TeacherProfileNotifier>(
+        builder: (context, notifier, child) {
+          if (notifier.loading) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            final errorMessage = snapshot.error.toString();
+          
+          if (notifier.error != null) {
+            final errorMessage = notifier.error.toString();
             if (errorMessage.contains('Token đã hết hạn') || 
                 errorMessage.contains('unauthorized')) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -103,33 +98,15 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                 ),
               );
             }
-            return Center(child: Text("Lỗi: ${snapshot.error}"));
+            return Center(child: Text("Lỗi: ${notifier.error}"));
           }
 
-          final notifiers = snapshot.data;
-          if (notifiers == null) {
-            return const Center(child: Text("Không thể khởi tạo dữ liệu"));
+          final profile = notifier.profile;
+          if (profile == null) {
+            return const Center(child: Text("Không có dữ liệu"));
           }
-
-          final profileNotifier = notifiers['profileNotifier'] as TeacherProfileNotifier;
-          return ChangeNotifierProvider<TeacherProfileNotifier>.value(
-            value: profileNotifier,
-            builder: (builderContext, child) {
-              return Consumer<TeacherProfileNotifier>(
-                builder: (consumerContext, notifier, child) {
-                  if (notifier.loading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (notifier.error != null) {
-                    return Center(child: Text("Lỗi: ${notifier.error}"));
-                  }
-
-                  final profile = notifier.profile;
-                  if (profile == null) {
-                    return const Center(child: Text("Không có dữ liệu"));
-                  }
-                  
-                  final Color backgroundColor = const Color(0xFF4A90E2);
+          
+          final Color backgroundColor = const Color(0xFF4A90E2);
                   
                   return SafeArea(
                 child: SingleChildScrollView(
@@ -338,10 +315,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                   ),
                 ),
               );
-                },
-              );
-            },
-          );
         },
       ),
     );
