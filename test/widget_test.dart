@@ -11,7 +11,7 @@ void main() {
         final prefs = await SharedPreferences.getInstance();
         final authNotifier = await AuthServiceLocator.setup(prefs);
         await tester.pumpWidget(
-          MyApp(authNotifier: authNotifier),
+          MyApp(authNotifier: authNotifier, teacherNotifiers: {},),
         );
         expect(find.byType(MyApp), findsOneWidget);
       });
