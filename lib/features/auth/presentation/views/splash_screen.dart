@@ -22,34 +22,32 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkAuthStatus() async {
     await Future.delayed(const Duration(milliseconds: 1000));
     if (!mounted) return;
+
     final navigator = Navigator.of(context);
     final authNotifier = context.read<AuthNotifier>();
+
     try {
       await authNotifier.loadUserFromStorage();
       if (!mounted) return;
-      final isAuthenticated = authNotifier.isLoggedIn && authNotifier.isTokenValid;
-      if (!isAuthenticated) {
-        await authNotifier.logout();
-        if (mounted) navigator.pushReplacementNamed(AppRoutes.login);
+
+      if (!authNotifier.isLoggedIn || !authNotifier.isTokenValid) {
+        navigator.pushReplacementNamed(AppRoutes.login);
         return;
       }
+
       final userRole = UserRole.fromString(authNotifier.user?.role);
       switch (userRole) {
         case UserRole.student:
-          final scheduleVM = context.read<ScheduleViewModel>();
-          scheduleVM.updateToken(authNotifier.user?.token ?? "");
-          await scheduleVM.loadSchedules();
-          if (mounted) navigator.pushReplacementNamed(AppRoutes.schedule);
-          return;
+          context.read<ScheduleViewModel>().updateToken(authNotifier.user?.token ?? "");
+          navigator.pushReplacementNamed(AppRoutes.schedule);
         case UserRole.lecturer:
-          if (mounted) navigator.pushReplacementNamed(AppRoutes.teacherHome);
-          return;
+          navigator.pushReplacementNamed(AppRoutes.teacherHome);
         default:
           await authNotifier.logout();
-          if (mounted) navigator.pushReplacementNamed(AppRoutes.login);
-          return;
+          navigator.pushReplacementNamed(AppRoutes.login);
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('❌ Auth check error: $e');
       if (mounted) navigator.pushReplacementNamed(AppRoutes.login);
     }
   }
