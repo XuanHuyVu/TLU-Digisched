@@ -254,6 +254,15 @@ class ScheduleCard extends StatelessWidget {
         ),
       );
 
+  bool _isInCurrentWeek(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    return !dateOnly.isBefore(monday) && !dateOnly.isAfter(sunday);
+  }
+
   @override
   Widget build(BuildContext context) {
     final header =
@@ -264,7 +273,8 @@ class ScheduleCard extends StatelessWidget {
         item.status == ScheduleStatus.done ||
         item.status == ScheduleStatus.canceled ||
         effectiveStatus == ScheduleStatus.expired;
-    final showActions = !locked;
+    final isInCurrentWeek = item.sessionDate != null && _isInCurrentWeek(item.sessionDate!);
+    final showActions = !locked && isInCurrentWeek;
     final statusColor = ScheduleStatusStyleX(effectiveStatus).color;
     final statusLabel = ScheduleStatusStyleX(effectiveStatus).label;
     return Container(

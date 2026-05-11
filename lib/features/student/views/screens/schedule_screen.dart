@@ -23,8 +23,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ScheduleViewModel>().loadSchedules();
+      _loadUnreadCount();
     });
-    _loadUnreadCount();
   }
 
   Future<void> _loadUnreadCount() async {
