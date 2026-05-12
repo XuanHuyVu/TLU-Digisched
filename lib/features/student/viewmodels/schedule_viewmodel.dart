@@ -9,7 +9,6 @@ class ScheduleViewModel extends ChangeNotifier {
     _scheduleService = ScheduleService(token);
   }
 
-  // Update token and recreate service
   void updateToken(String token) {
     _scheduleService = ScheduleService(token);
     notifyListeners();
@@ -22,6 +21,9 @@ class ScheduleViewModel extends ChangeNotifier {
 
   DateTime _selectedDate = DateTime.now();
   bool _isWeekView = false;
+  
+  // ✅ Tối ưu: Cache grouped data để không group lại mỗi build
+  Map<DateTime, List<StudentScheduleModel>>? _cachedGroupedSchedules;
 
   List<StudentScheduleModel> get allSchedules => _schedules;
   List<StudentScheduleModel> get schedules => _filteredSchedules;
@@ -29,6 +31,24 @@ class ScheduleViewModel extends ChangeNotifier {
   String get errorMessage => _errorMessage;
   DateTime get selectedDate => _selectedDate;
   bool get isWeekView => _isWeekView;
+  
+  // ✅ Tối ưu: Getter cho grouped schedules
+  Map<DateTime, List<StudentScheduleModel>> getGroupedSchedules() {
+    if (_cachedGroupedSchedules != null) return _cachedGroupedSchedules!;
+    
+    _cachedGroupedSchedules = {};
+    for (var schedule in _schedules) {
+      if (schedule.teachingDate == null) continue;
+      final date = DateTime(
+        schedule.teachingDate!.year,
+        schedule.teachingDate!.month,
+        schedule.teachingDate!.day,
+      );
+      _cachedGroupedSchedules!.putIfAbsent(date, () => []);
+      _cachedGroupedSchedules![date]!.add(schedule);
+    }
+    return _cachedGroupedSchedules!;
+  }
 
   void showToday() {
     _isWeekView = false;
@@ -54,16 +74,19 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> loadSchedules() async {
     _isLoading = true;
     _errorMessage = '';
+    _cachedGroupedSchedules = null; // Clear cache
     notifyListeners();
 
     try {
       _schedules = await _scheduleService.fetchAllSchedules();
       _filterSchedulesByDate();
+      _cachedGroupedSchedules = null; // Clear cache để trigger recalculation
     } catch (e) {
       debugPrint("Error loading schedules: $e");
       _errorMessage = e.toString();
       _schedules = [];
       _filteredSchedules = [];
+      _cachedGroupedSchedules = null;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -98,12 +121,14 @@ class ScheduleViewModel extends ChangeNotifier {
   void previousWeek() {
     final startOfWeek = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
     _selectedDate = startOfWeek.subtract(const Duration(days: 7));
+    _cachedGroupedSchedules = null; // Clear cache khi thay đổi week
     notifyListeners();
   }
 
   void nextWeek() {
     final startOfWeek = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
     _selectedDate = startOfWeek.add(const Duration(days: 7));
+    _cachedGroupedSchedules = null; // Clear cache khi thay đổi week
     notifyListeners();
   }
 

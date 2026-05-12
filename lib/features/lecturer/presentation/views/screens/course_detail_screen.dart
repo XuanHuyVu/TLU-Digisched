@@ -18,16 +18,52 @@ class CourseDetailScreen extends StatelessWidget {
     required this.schedules,
   });
 
+  ScheduleEntity _calculateEffectiveStatus(ScheduleEntity schedule) {
+    // If already done or canceled, keep the status
+    if (schedule.status == ScheduleStatus.done) return schedule;
+    if (schedule.status == ScheduleStatus.canceled) return schedule;
+
+    final now = DateTime.now();
+    final d = schedule.sessionDate;
+    
+    // If no date, default to upcoming
+    if (d == null) {
+      return schedule.status == ScheduleStatus.unknown
+          ? schedule.copyWith(status: ScheduleStatus.upcoming)
+          : schedule;
+    }
+
+    final today = DateTime(now.year, now.month, now.day);
+    final thatDay = DateTime(d.year, d.month, d.day);
+    
+    // Future date -> upcoming
+    if (thatDay.isAfter(today)) {
+      return schedule.copyWith(status: ScheduleStatus.upcoming);
+    }
+    
+    // Past date -> expired
+    if (thatDay.isBefore(today)) {
+      return schedule.copyWith(status: ScheduleStatus.expired);
+    }
+    
+    // Same day - check time
+    // For simplicity, if it's today and not done/canceled, mark as upcoming
+    // (You can add more sophisticated time checking here if needed)
+    return schedule.copyWith(status: ScheduleStatus.upcoming);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final totalSessions = schedules.length;
-    final completedSessions = schedules.where((s) => s.status == ScheduleStatus.done).length;
-    final upcomingSessions = schedules.where((s) => s.status == ScheduleStatus.upcoming).length;
-    final canceledSessions = schedules.where((s) => s.status == ScheduleStatus.canceled).length;
+    // Calculate effective status for each schedule
+    final schedulesWithStatus = schedules.map((s) => _calculateEffectiveStatus(s)).toList();
+    
+    final totalSessions = schedulesWithStatus.length;
+    final completedSessions = schedulesWithStatus.where((s) => s.status == ScheduleStatus.done).length;
+    final upcomingSessions = schedulesWithStatus.where((s) => s.status == ScheduleStatus.upcoming).length;
+    final canceledSessions = schedulesWithStatus.where((s) => s.status == ScheduleStatus.canceled).length;
     final progress = totalSessions > 0 ? (completedSessions / totalSessions * 100) : 0.0;
 
-    // Sort schedules by date
-    final sortedSchedules = List<ScheduleEntity>.from(schedules)
+    final sortedSchedules = List<ScheduleEntity>.from(schedulesWithStatus)
       ..sort((a, b) {
         if (a.sessionDate == null && b.sessionDate == null) return 0;
         if (a.sessionDate == null) return 1;
@@ -55,7 +91,6 @@ class CourseDetailScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Course Header
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -385,7 +420,6 @@ class _SessionCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Left Status Bar
             Container(
               width: 6,
               decoration: BoxDecoration(
@@ -396,14 +430,12 @@ class _SessionCard extends StatelessWidget {
                 ),
               ),
             ),
-            // Content
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Session Number and Status
                     Row(
                       children: [
                         Container(
@@ -457,7 +489,6 @@ class _SessionCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Date
                     Row(
                       children: [
                         Icon(
@@ -479,7 +510,6 @@ class _SessionCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Time
                     Row(
                       children: [
                         Icon(
@@ -511,7 +541,6 @@ class _SessionCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Room
                     Row(
                       children: [
                         Icon(
@@ -531,7 +560,6 @@ class _SessionCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // Notes (if any)
                     if (schedule.notes != null && schedule.notes!.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       Container(

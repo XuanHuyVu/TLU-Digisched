@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/student_schedule_model.dart';
 import '../../viewmodels/schedule_viewmodel.dart';
 import 'schedule_card.dart';
 
@@ -22,14 +21,9 @@ class WeekCalendar extends StatelessWidget {
     return Consumer<ScheduleViewModel>(
       builder: (context, vm, child) {
         final weekDays = vm.getWeekDates();
-
-        final Map<DateTime, List<StudentScheduleModel>> grouped = {};
-        for (var schedule in vm.allSchedules) {
-          if (schedule.teachingDate == null) continue;
-          final date = _dateOnly(schedule.teachingDate!);
-          grouped.putIfAbsent(date, () => []);
-          grouped[date]!.add(schedule);
-        }
+        
+        // ✅ Tối ưu: Sử dụng cached grouped data từ ViewModel
+        final grouped = vm.getGroupedSchedules();
 
         return Column(
           children: [
@@ -51,55 +45,57 @@ class WeekCalendar extends StatelessWidget {
                             (grouped[_dateOnly(day)] ?? []).isNotEmpty;
 
                         return Expanded(
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 2, vertical: 4),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isToday
-                                  ? const Color(0x144A90E2)
-                                  : Colors.transparent,
-                              border: Border.all(
+                          child: RepaintBoundary(
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 2, vertical: 4),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
                                 color: isToday
-                                    ? _brandBlue
-                                    : const Color(0x404A90E2),
-                                width: 1.3,
+                                    ? const Color(0x144A90E2)
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: isToday
+                                      ? _brandBlue
+                                      : const Color(0x404A90E2),
+                                  width: 1.3,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  _weekdayShort(day),
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${day.day}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Opacity(
-                                  opacity: hasSchedules ? 1 : 0,
-                                  child: Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: const BoxDecoration(
-                                      color: _brandBlue,
-                                      shape: BoxShape.circle,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    _weekdayShort(day),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black54,
                                     ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${day.day}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Opacity(
+                                    opacity: hasSchedules ? 1 : 0,
+                                    child: Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: _brandBlue,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
@@ -128,6 +124,7 @@ class WeekCalendar extends StatelessWidget {
                   if (list.isEmpty) return const SizedBox.shrink();
 
                   return Column(
+                    key: ValueKey('day_${date.millisecondsSinceEpoch}'),
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
@@ -141,7 +138,10 @@ class WeekCalendar extends StatelessWidget {
                           ),
                         ),
                       ),
-                      ...list.map((e) => ScheduleCard(schedule: e)),
+                      ...list.map((e) => ScheduleCard(
+                        key: ValueKey('schedule_${e.classSectionId}_${e.teachingDate?.millisecondsSinceEpoch}'),
+                        schedule: e,
+                      )),
                     ],
                   );
                 },

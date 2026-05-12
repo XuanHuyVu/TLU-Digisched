@@ -5,6 +5,7 @@ import '../notifiers/teacher_schedule_notifier.dart';
 import '../notifiers/teacher_notification_notifier.dart';
 import '../notifiers/teacher_profile_notifier.dart';
 import '../notifiers/teacher_stats_notifier.dart';
+import '../notifiers/avatar_notifier.dart';
 import '../../domain/usecases/fetch_teacher_home_data_usecase.dart';
 import '../../domain/usecases/fetch_all_schedules_usecase.dart';
 import '../../domain/usecases/mark_schedule_as_done_usecase.dart';
@@ -24,17 +25,19 @@ import '../../data/repositories/teacher_stats_repository_impl.dart';
 
 class TeacherServiceLocator {
   static Future<Map<String, dynamic>> setup(SharedPreferences prefs) async {
+    final sharedClient = http.Client();
+    
     final teacherRemoteDataSource = TeacherRemoteDataSource(
-      client: http.Client(),
+      client: sharedClient,
     );
     final notificationRemoteDataSource = TeacherNotificationRemoteDataSource(
-      client: http.Client(),
+      client: sharedClient,
     );
     final profileRemoteDataSource = TeacherProfileRemoteDataSource(
-      client: http.Client(),
+      client: sharedClient,
     );
     final statsRemoteDataSource = TeacherStatsRemoteDataSource(
-      client: http.Client(),
+      client: sharedClient,
     );
 
     final teacherRepository = TeacherRepositoryImpl(
@@ -100,12 +103,15 @@ class TeacherServiceLocator {
       fetchStatsUseCase: fetchStatsUseCase,
     );
 
+    final avatarNotifier = AvatarNotifier();
+
     return {
       'homeNotifier': homeNotifier,
       'scheduleNotifier': scheduleNotifier,
       'notificationNotifier': notificationNotifier,
       'profileNotifier': profileNotifier,
       'statsNotifier': statsNotifier,
+      'avatarNotifier': avatarNotifier,
     };
   }
 }

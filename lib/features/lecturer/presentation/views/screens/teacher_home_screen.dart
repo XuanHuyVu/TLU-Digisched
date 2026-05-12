@@ -120,6 +120,14 @@ class _HomeTabState extends State<_HomeTab> {
               onMarkDone: () async {
                 await notifier.markDone(e);
               },
+              onRequestCancel: (reason, fileUrl) async {
+                await notifier.requestCancel(
+                  detailId: e.id,
+                  reason: reason,
+                  fileUrl: fileUrl,
+                );
+                return {'status': 'pending'};
+              },
             ),
           ),
           if (notifier.todaySchedules.isEmpty)

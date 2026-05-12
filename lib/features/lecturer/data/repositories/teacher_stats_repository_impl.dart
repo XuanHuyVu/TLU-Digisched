@@ -14,7 +14,6 @@ class TeacherStatsRepositoryImpl implements TeacherStatsRepository {
       final lecturerStats = await remoteDataSource.getStats();
       final totalSessions = lecturerStats.overview.totalSessionsThisSemester.toDouble();
       final completedSessions = lecturerStats.overview.completedSessions.toDouble();
-      final upcomingSessions = lecturerStats.overview.upcomingSessions.toDouble();
       return TeacherStatModel(
         teacherId: lecturerStats.overview.lecturerId,
         teacherName: lecturerStats.overview.lecturerName,

@@ -15,7 +15,6 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
   @override
   void initState() {
     super.initState();
-    // Load stats lazily after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TeacherStatsNotifier>().load();
     });
@@ -91,13 +90,9 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
               );
             }
 
-            final completionRate = stat.totalHours > 0
-                ? ((stat.taughtHours + stat.makeUpHours) / stat.totalHours * 100)
-                : 0.0;
-
+            final completionRate = notifier.completionRate;
             return Column(
               children: [
-                // Header
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
@@ -105,7 +100,7 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
                     color: _brandBlue,
                     boxShadow: [
                       BoxShadow(
-                        color: _brandBlue.withOpacity(0.3),
+                        color: _brandBlue.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -133,15 +128,12 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
                     ],
                   ),
                 ),
-
-                // Content
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: () => notifier.load(),
                     child: ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
-                        // Teacher Info Card
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -149,7 +141,7 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, 2),
                               ),
@@ -159,7 +151,7 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 28,
-                                backgroundColor: _brandBlue.withOpacity(0.1),
+                                backgroundColor: _brandBlue.withValues(alpha: 0.1),
                                 child: Icon(
                                   Icons.person,
                                   size: 32,
@@ -192,10 +184,7 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
                             ],
                           ),
                         ),
-
                         const SizedBox(height: 20),
-
-                        // Stats Grid
                         GridView.count(
                           crossAxisCount: 2,
                           shrinkWrap: true,
@@ -230,22 +219,19 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 20),
-
-                        // Completion Progress Card
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [_brandBlue, _brandBlue.withOpacity(0.8)],
+                              colors: [_brandBlue, _brandBlue.withValues(alpha: 0.8)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: _brandBlue.withOpacity(0.3),
+                                color: _brandBlue.withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -275,7 +261,7 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
                                 borderRadius: BorderRadius.circular(10),
                                 child: LinearProgressIndicator(
                                   value: completionRate / 100,
-                                  backgroundColor: Colors.white.withOpacity(0.3),
+                                  backgroundColor: Colors.white.withValues(alpha: 0.3),
                                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                                   minHeight: 8,
                                 ),
@@ -308,7 +294,7 @@ class _TeacherStatScreenState extends State<TeacherStatScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
