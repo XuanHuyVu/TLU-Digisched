@@ -9,7 +9,7 @@ import 'features/lecturer/presentation/notifiers/teacher_home_notifier.dart';
 import 'features/lecturer/presentation/notifiers/teacher_notification_notifier.dart';
 import 'features/lecturer/presentation/notifiers/teacher_profile_notifier.dart';
 import 'features/lecturer/presentation/notifiers/teacher_stats_notifier.dart';
-import 'features/lecturer/presentation/notifiers/avatar_notifier.dart'; // ✅ Tối ưu: Import AvatarNotifier
+import 'features/lecturer/presentation/notifiers/avatar_notifier.dart';
 import 'features/lecturer/presentation/views/screens/teacher_home_screen.dart';
 import 'features/student/viewmodels/schedule_viewmodel.dart';
 import 'features/auth/presentation/views/splash_screen.dart';
@@ -55,6 +55,8 @@ class MyApp extends StatelessWidget {
   }
 
   List<ChangeNotifierProvider> _buildProviders() {
+    final avatarNotifier = teacherNotifiers['avatarNotifier'] as AvatarNotifier?;
+    
     return [
       ChangeNotifierProvider<AuthNotifier>.value(
         value: authNotifier,
@@ -77,9 +79,14 @@ class MyApp extends StatelessWidget {
       ChangeNotifierProvider<TeacherStatsNotifier>.value(
         value: teacherNotifiers['statsNotifier'] as TeacherStatsNotifier,
       ),
-      ChangeNotifierProvider(
-        create: (_) => AvatarNotifier(),
-      ),
+      if (avatarNotifier != null)
+        ChangeNotifierProvider<AvatarNotifier>.value(
+          value: avatarNotifier,
+        )
+      else
+        ChangeNotifierProvider(
+          create: (_) => AvatarNotifier(),
+        ),
     ];
   }
 

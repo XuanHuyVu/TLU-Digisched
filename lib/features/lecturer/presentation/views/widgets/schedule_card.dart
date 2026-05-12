@@ -262,6 +262,23 @@ class ScheduleCard extends StatelessWidget {
     return !dateOnly.isBefore(monday) && !dateOnly.isAfter(sunday);
   }
 
+  bool _canRequestCancel() {
+    if (item.status == ScheduleStatus.done) return false;
+    if (item.status == ScheduleStatus.canceled) return false;
+    if (effectiveStatus == ScheduleStatus.expired) return false;
+    final now = DateTime.now();
+    final d = item.sessionDate;
+    if (d == null) return false;
+    final today = DateTime(now.year, now.month, now.day);
+    final thatDay = DateTime(d.year, d.month, d.day);
+    if (thatDay.isAfter(today)) return true;
+    if (thatDay.isBefore(today)) return false;
+    final range = _parseRangeForDate(today);
+    if (range == null) return false;
+    final (start, _) = range;
+    return now.isBefore(start);
+  }
+
   @override
   Widget build(BuildContext context) {
     final header =
@@ -273,7 +290,8 @@ class ScheduleCard extends StatelessWidget {
         item.status == ScheduleStatus.canceled ||
         effectiveStatus == ScheduleStatus.expired;
     final isInCurrentWeek = item.sessionDate != null && _isInCurrentWeek(item.sessionDate!);
-    final showActions = !locked && isInCurrentWeek;
+    final showCompleteButton = !locked && isInCurrentWeek;
+    final showCancelButton = _canRequestCancel();
     final statusColor = ScheduleStatusStyleX(effectiveStatus).color;
     final statusLabel = ScheduleStatusStyleX(effectiveStatus).label;
     return Container(
@@ -345,14 +363,15 @@ class ScheduleCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    if (showActions)
+                    if (showCompleteButton || showCancelButton)
                       Row(
                         children: [
-                          _chipButton(
-                            'Hoàn thành',
-                            const Color(0xFF2E7D32),
-                            const Color(0xFFE2F3E6),
-                            () async {
+                          if (showCompleteButton)
+                            _chipButton(
+                              'Hoàn thành',
+                              const Color(0xFF2E7D32),
+                              const Color(0xFFE2F3E6),
+                              () async {
                               final confirm = await _showConfirmDialog(
                                 context,
                                 title: 'Xác nhận hoàn thành?',
@@ -434,12 +453,14 @@ class ScheduleCard extends StatelessWidget {
                               }
                             },
                           ),
-                          const SizedBox(width: 10),
-                          _chipButton(
-                            'Nghỉ dạy',
-                            const Color(0xFFF29900),
-                            const Color(0xFFFFF1D9),
-                                () async {
+                          if (showCompleteButton && showCancelButton)
+                            const SizedBox(width: 10),
+                          if (showCancelButton)
+                            _chipButton(
+                              'Nghỉ dạy',
+                              const Color(0xFFF29900),
+                              const Color(0xFFFFF1D9),
+                                  () async {
                               final cancelHandler = onRequestCancel;
                               if (cancelHandler == null) return;
                               final result = await Navigator.push<Map<String, dynamic>?>(

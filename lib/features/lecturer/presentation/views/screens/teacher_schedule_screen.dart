@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../domain/entities/schedule_entity.dart';
 import '../../notifiers/teacher_schedule_notifier.dart';
 import '../widgets/schedule_card.dart';
+import 'course_detail_screen.dart';
 
 const _brandBlue = Color(0xFF4A90E2);
 String _two(int n) => n.toString().padLeft(2, '0');
@@ -707,42 +709,43 @@ class _CourseCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // InkWell(
-                    //   onTap: () {
-                    //     Navigator.of(context).push(
-                    //       MaterialPageRoute(
-                    //         builder: (context) => CourseDetailScreen(
-                    //           courseName: subjectName,
-                    //           classCode: classCode,
-                    //           sessionType: sessionType,
-                    //           schedules: schedules,
-                    //         ),
-                    //       ),
-                    //     );
-                    //   },
-                    //   child: Container(
-                    //     padding: const EdgeInsets.symmetric(vertical: 8),
-                    //     decoration: BoxDecoration(
-                    //       border: Border.all(color: _brandBlue),
-                    //       borderRadius: BorderRadius.circular(8),
-                    //     ),
-                    //     child: const Row(
-                    //       mainAxisAlignment: MainAxisAlignment.center,
-                    //       children: [
-                    //         Icon(Icons.visibility_outlined, size: 16, color: _brandBlue),
-                    //         SizedBox(width: 6),
-                    //         Text(
-                    //           'Xem chi tiết',
-                    //           style: TextStyle(
-                    //             color: _brandBlue,
-                    //             fontWeight: FontWeight.w700,
-                    //             fontSize: 13,
-                    //           ),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ),
+                    InkWell(
+                      onTap: () {
+                        final courseSchedules = (course['schedules'] as List<ScheduleEntity>?) ?? [];
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => CourseDetailScreen(
+                              courseName: subjectName,
+                              classCode: classCode,
+                              sessionType: sessionType,
+                              schedules: courseSchedules,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: _brandBlue),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.visibility_outlined, size: 16, color: _brandBlue),
+                            SizedBox(width: 6),
+                            Text(
+                              'Xem chi tiết',
+                              style: TextStyle(
+                                color: _brandBlue,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
