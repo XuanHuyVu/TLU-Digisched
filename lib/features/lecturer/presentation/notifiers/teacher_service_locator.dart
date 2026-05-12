@@ -24,17 +24,19 @@ import '../../data/repositories/teacher_stats_repository_impl.dart';
 
 class TeacherServiceLocator {
   static Future<Map<String, dynamic>> setup(SharedPreferences prefs) async {
+    final sharedClient = http.Client();
+    
     final teacherRemoteDataSource = TeacherRemoteDataSource(
-      client: http.Client(),
+      client: sharedClient,
     );
     final notificationRemoteDataSource = TeacherNotificationRemoteDataSource(
-      client: http.Client(),
+      client: sharedClient,
     );
     final profileRemoteDataSource = TeacherProfileRemoteDataSource(
-      client: http.Client(),
+      client: sharedClient,
     );
     final statsRemoteDataSource = TeacherStatsRemoteDataSource(
-      client: http.Client(),
+      client: sharedClient,
     );
 
     final teacherRepository = TeacherRepositoryImpl(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../domain/entities/schedule_entity.dart';
 import '../../notifiers/teacher_schedule_notifier.dart';
 import '../widgets/schedule_card.dart';
 
@@ -205,21 +204,33 @@ class _ScheduleAppBar extends StatelessWidget {
   }
 }
 
-class _DayTab extends StatelessWidget {
+class _DayTab extends StatefulWidget {
   const _DayTab();
+
+  @override
+  State<_DayTab> createState() => _DayTabState();
+}
+
+class _DayTabState extends State<_DayTab> {
+  late final DateTime _today;
+
+  @override
+  void initState() {
+    super.initState();
+    _today = DateTime.now();
+  }
 
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<TeacherScheduleNotifier>();
-    final today = DateTime.now();
     final todaySchedules =
         notifier.schedules.where((s) {
           final scheduleDate = s.sessionDate;
           if (scheduleDate == null) return false;
           final sameDay =
-              scheduleDate.year == today.year &&
-              scheduleDate.month == today.month &&
-              scheduleDate.day == today.day;
+              scheduleDate.year == _today.year &&
+              scheduleDate.month == _today.month &&
+              scheduleDate.day == _today.day;
           return sameDay;
         }).toList();
 
@@ -243,7 +254,7 @@ class _DayTab extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                '${today.day}',
+                '${_today.day}',
                 style: const TextStyle(
                   fontSize: 56,
                   fontWeight: FontWeight.w900,
@@ -251,7 +262,7 @@ class _DayTab extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '${_weekdayFull(today)}, ${today.day} tháng ${today.month} năm ${today.year}',
+                '${_weekdayFull(_today)}, ${_today.day} tháng ${_today.month} năm ${_today.year}',
                 style: const TextStyle(color: Colors.black87),
               ),
             ],
@@ -308,6 +319,7 @@ class _DayTab extends StatelessWidget {
 
 class _WeekTab extends StatelessWidget {
   const _WeekTab();
+  
   List<DateTime> _weekFromMonday(DateTime base) {
     final monday = base.subtract(Duration(days: base.weekday - 1));
     return List.generate(7, (i) => _dateOnly(DateTime(monday.year, monday.month, monday.day + i)));
@@ -318,18 +330,8 @@ class _WeekTab extends StatelessWidget {
     final notifier = context.watch<TeacherScheduleNotifier>();
     final today = DateTime.now();
     final weekDays = _weekFromMonday(today);
-    final Map<DateTime, List<ScheduleEntity>> grouped = {};
-    for (final schedule in notifier.schedules) {
-      final scheduleDate = schedule.sessionDate;
-      if (scheduleDate != null) {
-        final dateOnly = _dateOnly(scheduleDate);
-        if (weekDays.contains(dateOnly)) {
-          grouped.putIfAbsent(dateOnly, () => []).add(schedule);
-        }
-      }
-    }
-    final daysWithSchedules =
-    weekDays.where((day) => (grouped[day] ?? []).isNotEmpty).toList();
+    final grouped = notifier.groupedByDate;
+    final daysWithSchedules = weekDays.where((day) => (grouped[day] ?? []).isNotEmpty).toList();
     if (daysWithSchedules.isEmpty) {
       return Center(
         child: Padding(
@@ -383,6 +385,7 @@ class _WeekTab extends StatelessWidget {
               ),
               ...list.map(
                 (e) => ScheduleCard(
+                  key: ValueKey('schedule_${e.id}'),
                   item: e,
                   onMarkDone:
                       () => context.read<TeacherScheduleNotifier>().markDone(e),
@@ -407,17 +410,8 @@ class _SemesterTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<TeacherScheduleNotifier>();
-    final Map<DateTime, List<ScheduleEntity>> grouped = {};
-    for (final schedule in notifier.schedules) {
-      final scheduleDate = schedule.sessionDate;
-      if (scheduleDate != null) {
-        final dateOnly = _dateOnly(scheduleDate);
-        grouped.putIfAbsent(dateOnly, () => []).add(schedule);
-      }
-    }
-
+    final grouped = notifier.groupedByDate;
     final sortedDates = grouped.keys.toList()..sort();
-    
     if (sortedDates.isEmpty) {
       return Center(
         child: Padding(
@@ -478,6 +472,7 @@ class _SemesterTab extends StatelessWidget {
           ),
           ...list.map(
             (e) => ScheduleCard(
+              key: ValueKey('schedule_${e.id}'),
               item: e,
               onMarkDone:
                   () => context.read<TeacherScheduleNotifier>().markDone(e),
@@ -502,15 +497,8 @@ class _CoursesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<TeacherScheduleNotifier>();
-    
-    // Group schedules by course (classCode + subjectName)
-    final Map<String, List<ScheduleEntity>> courseGroups = {};
-    for (final schedule in notifier.schedules) {
-      final key = '${schedule.classCode}_${schedule.subjectName}';
-      courseGroups.putIfAbsent(key, () => []).add(schedule);
-    }
-
-    if (courseGroups.isEmpty) {
+    final courses = notifier.courseStats;
+    if (courses.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -546,33 +534,15 @@ class _CoursesTab extends StatelessWidget {
       );
     }
 
-    final courses = courseGroups.entries.map((entry) {
-      final schedules = entry.value;
-      final first = schedules.first;
-      final totalSessions = schedules.length;
-      final completedSessions = schedules.where((s) => s.status == ScheduleStatus.done).length;
-      final progress = totalSessions > 0 ? (completedSessions / totalSessions * 100) : 0.0;
-      
-      return {
-        'subjectName': first.subjectName,
-        'classCode': first.classCode,
-        'sessionType': first.sessionType.displayName,
-        'totalSessions': totalSessions,
-        'completedSessions': completedSessions,
-        'progress': progress,
-        'schedules': schedules,
-      };
-    }).toList();
-
-    // Sort by subject name
-    courses.sort((a, b) => (a['subjectName'] as String).compareTo(b['subjectName'] as String));
-
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       itemCount: courses.length,
       itemBuilder: (context, index) {
         final course = courses[index];
-        return _CourseCard(course: course);
+        return _CourseCard(
+          key: ValueKey('course_${course['classCode']}_${course['subjectName']}'),
+          course: course,
+        );
       },
     );
   }
@@ -581,7 +551,7 @@ class _CoursesTab extends StatelessWidget {
 class _CourseCard extends StatelessWidget {
   final Map<String, dynamic> course;
 
-  const _CourseCard({required this.course});
+  const _CourseCard({required this.course, required ValueKey<String> key});
 
   @override
   Widget build(BuildContext context) {
@@ -591,7 +561,6 @@ class _CourseCard extends StatelessWidget {
     final totalSessions = course['totalSessions'] as int;
     final completedSessions = course['completedSessions'] as int;
     final progress = course['progress'] as double;
-    final schedules = course['schedules'] as List<ScheduleEntity>;
     final isCompleted = completedSessions == totalSessions;
     final statusColor = isCompleted ? const Color(0xFF43A047) : _brandBlue;
 

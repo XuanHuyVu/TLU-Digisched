@@ -16,7 +16,6 @@ class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
   @override
   void initState() {
     super.initState();
-    // Load notifications when screen is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TeacherNotificationNotifier>().load();
     });
@@ -69,10 +68,9 @@ class _TeacherNotificationScreenState extends State<TeacherNotificationScreen> {
             if (notifier.error != null) {
               return Center(child: Text('Lỗi: ${notifier.error}'));
             }
-
             final all = notifier.notifications;
-            final read = all.where((n) => n.isRead).toList();
-            final unread = all.where((n) => !n.isRead).toList();
+            final read = notifier.readNotifications;
+            final unread = notifier.unreadNotifications;
             return TabBarView(
               children: [
                 _NotificationListView(

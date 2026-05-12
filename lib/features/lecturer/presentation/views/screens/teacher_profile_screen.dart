@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../../services/avatar_service_mobile.dart';
 import '../../../../../shared/widgets/settings_section.dart';
 import '../../notifiers/teacher_profile_notifier.dart';
+import '../../notifiers/avatar_notifier.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   const TeacherProfileScreen({super.key});
@@ -15,46 +15,36 @@ class TeacherProfileScreen extends StatefulWidget {
 }
 
 class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
-  String? _avatarBase64;
-
   @override
   void initState() {
     super.initState();
-    _loadAvatar();
     
-    // Load profile when screen is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TeacherProfileNotifier>().load();
+      context.read<AvatarNotifier>().loadAvatar();
     });
   }
 
-  Future<void> _loadAvatar() async {
-    final savedBase64 = await AvatarService.loadAvatar();
-    if (mounted) {
-      setState(() => _avatarBase64 = savedBase64);
-    }
-  }
-
   Future<void> _pickAvatar() async {
-    final newAvatar = await AvatarService.pickAvatar();
-    if (newAvatar != null) {
-      if (mounted) {
-        setState(() => _avatarBase64 = newAvatar);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Cập nhật avatar thành công!"),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
+    final avatarNotifier = context.read<AvatarNotifier>();
+    await avatarNotifier.pickAvatar();
+    
+    if (mounted && avatarNotifier.avatarBase64 != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cập nhật avatar thành công!"),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
   Future<void> _removeAvatar() async {
-    await AvatarService.removeAvatar();
+    final avatarNotifier = context.read<AvatarNotifier>();
+    await avatarNotifier.removeAvatar();
+    
     if (mounted) {
-      setState(() => _avatarBase64 = null);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Đã xoá avatar"),
@@ -82,18 +72,18 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _handleTokenExpired(context);
               });
-              return Center(
+              return const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.lock_clock, size: 64, color: Colors.orange),
-                    const SizedBox(height: 16),
-                    const Text(
+                    Icon(Icons.lock_clock, size: 64, color: Colors.orange),
+                    SizedBox(height: 16),
+                    Text(
                       'Phiên đăng nhập đã hết hạn',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
-                    const Text('Đang chuyển về màn hình đăng nhập...'),
+                    SizedBox(height: 8),
+                    Text('Đang chuyển về màn hình đăng nhập...'),
                   ],
                 ),
               );
@@ -105,34 +95,36 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
           if (profile == null) {
             return const Center(child: Text("Không có dữ liệu"));
           }
-          
-          final Color backgroundColor = const Color(0xFF4A90E2);
-                  
-                  return SafeArea(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        color: backgroundColor,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 28,
-                          horizontal: 20,
-                        ),
-                        child: Column(
-                          children: [
-                            Stack(
+          const Color backgroundColor = Color(0xFF4A90E2);
+          return SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    color: backgroundColor,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 28,
+                      horizontal: 20,
+                    ),
+                    child: Column(
+                      children: [
+                        Consumer<AvatarNotifier>(
+                          builder: (context, avatarNotifier, child) {
+                            final avatarBase64 = avatarNotifier.avatarBase64;
+                            
+                            return Stack(
                               alignment: Alignment.bottomRight,
                               children: [
                                 CircleAvatar(
                                   radius: 50,
                                   backgroundColor: Colors.blue.shade300,
                                   backgroundImage:
-                                      _avatarBase64 != null
-                                          ? MemoryImage(base64Decode(_avatarBase64!))
+                                      avatarBase64 != null
+                                          ? MemoryImage(base64Decode(avatarBase64))
                                           : null,
                                   child:
-                                      _avatarBase64 == null
+                                      avatarBase64 == null
                                           ? Text(
                                             _getInitials(profile.fullName),
                                             style: GoogleFonts.montserrat(
@@ -170,7 +162,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                                                     _pickAvatar();
                                                   },
                                                 ),
-                                                if (_avatarBase64 != null)
+                                                if (avatarBase64 != null)
                                                   ListTile(
                                                     leading: const Icon(
                                                       Icons.delete,
@@ -214,7 +206,9 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                                   ),
                                 ),
                               ],
-                            ),
+                            );
+                          },
+                        ),
                             const SizedBox(height: 16),
                             Text(
                               profile.fullName,

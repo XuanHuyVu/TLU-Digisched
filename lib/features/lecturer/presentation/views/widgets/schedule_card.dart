@@ -14,7 +14,7 @@ class ScheduleCard extends StatelessWidget {
     this.onMarkDone,
     this.onRequestCancel,
   });
-
+  static final _timeRangeRegex = RegExp(r'(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})');
   Future<void> _showCustomDialog(
     BuildContext context, {
     required String title,
@@ -149,8 +149,7 @@ class ScheduleCard extends StatelessWidget {
 
   (DateTime, DateTime)? _parseRangeForDate(DateTime baseDate) {
     final tr = (item.timeRange).trim();
-    final reg = RegExp(r'(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})');
-    final m = reg.firstMatch(tr);
+    final m = _timeRangeRegex.firstMatch(tr);
     if (m == null) return null;
     final sh = int.parse(m.group(1)!);
     final sm = int.parse(m.group(2)!);
