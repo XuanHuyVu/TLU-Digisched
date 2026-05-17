@@ -275,6 +275,8 @@ class _DayTabState extends State<_DayTab> {
           (e) => ScheduleCard(
             item: e,
             onMarkDone: () => context.read<TeacherScheduleNotifier>().markDone(e),
+            onMarkMakeupAttendance: (reason, fileUrl) => 
+                context.read<TeacherScheduleNotifier>().markMakeupAttendance(e, reason, fileUrl),
             onRequestCancel:
                 (reason, fileUrl) =>
                     context.read<TeacherScheduleNotifier>().requestCancel(
@@ -391,6 +393,8 @@ class _WeekTab extends StatelessWidget {
                   item: e,
                   onMarkDone:
                       () => context.read<TeacherScheduleNotifier>().markDone(e),
+                  onMarkMakeupAttendance: (reason, fileUrl) => 
+                      context.read<TeacherScheduleNotifier>().markMakeupAttendance(e, reason, fileUrl),
                   onRequestCancel:
                       (reason, fileUrl) =>
                           context.read<TeacherScheduleNotifier>().requestCancel(
@@ -478,6 +482,8 @@ class _SemesterTab extends StatelessWidget {
               item: e,
               onMarkDone:
                   () => context.read<TeacherScheduleNotifier>().markDone(e),
+              onMarkMakeupAttendance: (reason, fileUrl) => 
+                  context.read<TeacherScheduleNotifier>().markMakeupAttendance(e, reason, fileUrl),
               onRequestCancel:
                   (reason, fileUrl) =>
                       context.read<TeacherScheduleNotifier>().requestCancel(

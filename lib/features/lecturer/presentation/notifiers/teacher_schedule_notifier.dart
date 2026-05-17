@@ -1,17 +1,20 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/schedule_entity.dart';
 import '../../domain/usecases/mark_schedule_as_done_usecase.dart';
+import '../../domain/usecases/mark_makeup_attendance_usecase.dart';
 import '../../domain/usecases/request_class_cancel_usecase.dart';
 import '../../domain/usecases/fetch_all_schedules_usecase.dart';
 
 class TeacherScheduleNotifier extends ChangeNotifier {
   final FetchAllSchedulesUseCase fetchAllSchedulesUseCase;
   final MarkScheduleAsDoneUseCase markScheduleAsDoneUseCase;
+  final MarkMakeupAttendanceUseCase markMakeupAttendanceUseCase;
   final RequestClassCancelUseCase requestClassCancelUseCase;
 
   TeacherScheduleNotifier({
     required this.fetchAllSchedulesUseCase,
     required this.markScheduleAsDoneUseCase,
+    required this.markMakeupAttendanceUseCase,
     required this.requestClassCancelUseCase,
   });
 
@@ -51,7 +54,7 @@ class TeacherScheduleNotifier extends ChangeNotifier {
       final schedules = entry.value;
       final first = schedules.first;
       final totalSessions = schedules.length;
-      final completedSessions = schedules.where((s) => s.status == ScheduleStatus.done).length;
+      final completedSessions = schedules.where((s) => s.isCompleted).length;
       final progress = totalSessions > 0 ? (completedSessions / totalSessions * 100) : 0.0;
       
       return {
@@ -93,19 +96,48 @@ class TeacherScheduleNotifier extends ChangeNotifier {
 
   Future<void> markDone(ScheduleEntity schedule) async {
     try {
-      if (schedule.id == 0) {
-        throw Exception('Thiếu schedule id');
-      }
-
-      final idx = _schedules.indexWhere((s) => s.id == schedule.id);
-      if (idx != -1) {
-        final updated = schedule.copyWith(status: ScheduleStatus.done);
-        _schedules[idx] = updated;
+      final index = _schedules.indexWhere((s) => s.id == schedule.id);
+      if (index != -1) {
+        final updated = schedule.copyWith(
+          status: ScheduleStatus.done,
+          isCompleted: true,
+          completedAt: DateTime.now(),
+        );
+        _schedules[index] = updated;
         _clearCache();
         notifyListeners();
       }
 
       await markScheduleAsDoneUseCase(schedule.id);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> markMakeupAttendance(ScheduleEntity schedule, String reason, String? fileUrl) async {
+    try {
+      final index = _schedules.indexWhere((s) => s.id == schedule.id);
+      if (index != -1) {
+        final updated = schedule.copyWith(
+          status: ScheduleStatus.done,
+          isCompleted: true,
+          completedAt: DateTime.now(),
+          isMakeupAttendance: true,
+          makeupReason: reason,
+          makeupFileUrl: fileUrl,
+        );
+        _schedules[index] = updated;
+        _clearCache();
+        notifyListeners();
+      }
+
+      await markMakeupAttendanceUseCase(
+        scheduleDetailId: schedule.id,
+        reason: reason,
+        fileUrl: fileUrl,
+      );
     } catch (e) {
       _error = e.toString();
       notifyListeners();

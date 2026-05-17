@@ -20,6 +20,11 @@ class ScheduleEntity {
   final ScheduleStatus status;
   final String subjectName;
   final String classCode;
+  final bool isCompleted;
+  final DateTime? completedAt;
+  final bool isMakeupAttendance;
+  final String? makeupReason;
+  final String? makeupFileUrl;
 
   const ScheduleEntity({
     required this.id,
@@ -37,6 +42,11 @@ class ScheduleEntity {
     required this.status,
     required this.subjectName,
     required this.classCode,
+    this.isCompleted = false,
+    this.completedAt,
+    this.isMakeupAttendance = false,
+    this.makeupReason,
+    this.makeupFileUrl,
   });
 
   int get periodsCount =>
@@ -72,6 +82,11 @@ class ScheduleEntity {
     ScheduleStatus? status,
     String? subjectName,
     String? classCode,
+    bool? isCompleted,
+    DateTime? completedAt,
+    bool? isMakeupAttendance,
+    String? makeupReason,
+    String? makeupFileUrl,
   }) {
     return ScheduleEntity(
       id: id ?? this.id,
@@ -89,6 +104,11 @@ class ScheduleEntity {
       status: status ?? this.status,
       subjectName: subjectName ?? this.subjectName,
       classCode: classCode ?? this.classCode,
+      isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? this.completedAt,
+      isMakeupAttendance: isMakeupAttendance ?? this.isMakeupAttendance,
+      makeupReason: makeupReason ?? this.makeupReason,
+      makeupFileUrl: makeupFileUrl ?? this.makeupFileUrl,
     );
   }
 }

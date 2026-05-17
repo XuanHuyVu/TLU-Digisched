@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../domain/entities/schedule_entity.dart';
 import '../screens/class_cancel_screen.dart';
+import '../screens/makeup_attendance_screen.dart';
 import './schedule_status_badge.dart';
 
 class ScheduleCard extends StatelessWidget {
   final ScheduleEntity item;
   final Future<void> Function()? onMarkDone;
+  final Future<void> Function(String reason, String? fileUrl)? onMarkMakeupAttendance;
   final Future<Map<String, dynamic>> Function(String reason, String? fileUrl)? onRequestCancel;
 
   const ScheduleCard({
     super.key,
     required this.item,
     this.onMarkDone,
+    this.onMarkMakeupAttendance,
     this.onRequestCancel,
   });
   static final _timeRangeRegex = RegExp(r'(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})');
@@ -188,6 +191,60 @@ class ScheduleCard extends StatelessWidget {
     return ScheduleStatus.ongoing;
   }
 
+  /// Kiểm tra xem có thể đánh dấu hoàn thành không
+  /// Logic mới: Cho phép đánh dấu khi buổi học đã bắt đầu (ongoing hoặc expired)
+  bool _canMarkComplete() {
+    // Không thể đánh dấu nếu đã hoàn thành hoặc đã hủy
+    if (item.isCompleted) return false;
+    if (item.status == ScheduleStatus.done) return false;
+    if (item.status == ScheduleStatus.canceled) return false;
+    
+    final now = DateTime.now();
+    final d = item.sessionDate;
+    if (d == null) return false;
+    
+    final today = DateTime(now.year, now.month, now.day);
+    final thatDay = DateTime(d.year, d.month, d.day);
+    
+    // Không thể đánh dấu nếu chưa đến ngày
+    if (thatDay.isAfter(today)) return false;
+    
+    // Nếu là ngày hôm nay, kiểm tra xem đã bắt đầu chưa
+    if (_isSameDay(today, thatDay)) {
+      final range = _parseRangeForDate(today);
+      if (range == null) return false;
+      final (start, _) = range;
+      // Chỉ cho phép đánh dấu khi buổi học đã bắt đầu
+      return now.isAfter(start) || now.isAtSameMomentAs(start);
+    }
+    
+    // Nếu là ngày trong quá khứ, luôn cho phép đánh dấu
+    return true;
+  }
+
+  /// Kiểm tra xem có phải là expired (quá hạn) không
+  bool _isExpired() {
+    final now = DateTime.now();
+    final d = item.sessionDate;
+    if (d == null) return false;
+    
+    final today = DateTime(now.year, now.month, now.day);
+    final thatDay = DateTime(d.year, d.month, d.day);
+    
+    // Nếu là ngày trong quá khứ
+    if (thatDay.isBefore(today)) return true;
+    
+    // Nếu là hôm nay, kiểm tra xem đã kết thúc chưa
+    if (_isSameDay(today, thatDay)) {
+      final range = _parseRangeForDate(today);
+      if (range == null) return false;
+      final (_, end) = range;
+      return now.isAfter(end);
+    }
+    
+    return false;
+  }
+
   String _formatHm(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
@@ -195,41 +252,26 @@ class ScheduleCard extends StatelessWidget {
     final now = DateTime.now();
     final d = item.sessionDate;
     if (d == null) return (false, 'Không xác định ngày học.', null, null);
-    final today = DateTime(now.year, now.month, now.day);
-    final thatDay = DateTime(d.year, d.month, d.day);
-    if (!_isSameDay(today, thatDay)) {
-      return (
-        false,
-        'Chỉ có thể đánh dấu trong đúng ngày diễn ra buổi học.',
-        null,
-        null,
-      );
-    }
-
-    final range = _parseRangeForDate(today);
+    
+    final range = _parseRangeForDate(DateTime(d.year, d.month, d.day));
     if (range == null) {
       return (false, 'Không xác định được khung giờ của buổi học.', null, null);
     }
-    final (_, end) = range;
-    final windowStart = end.subtract(const Duration(minutes: 60));
-    final windowEnd = end.add(const Duration(minutes: 60));
-    if (now.isBefore(windowStart)) {
+    
+    final (start, _) = range;
+    
+    // Kiểm tra xem buổi học đã bắt đầu chưa
+    if (now.isBefore(start)) {
       return (
         false,
-        'Chưa đến thời gian: chỉ được đánh dấu trong 60 phút trước khi kết thúc.',
-        windowStart,
-        windowEnd,
+        'Buổi học chưa bắt đầu. Vui lòng đợi đến ${_formatHm(start)}.',
+        start,
+        null,
       );
     }
-    if (now.isAfter(windowEnd)) {
-      return (
-        false,
-        'Quá thời gian: đã quá 60 phút sau khi kết thúc.',
-        windowStart,
-        windowEnd,
-      );
-    }
-    return (true, null, windowStart, windowEnd);
+    
+    // Đã bắt đầu hoặc đã kết thúc - đều cho phép đánh dấu
+    return (true, null, start, null);
   }
 
   Widget _chipButton(String text, Color fg, Color bg, VoidCallback? onTap) =>
@@ -252,15 +294,6 @@ class ScheduleCard extends StatelessWidget {
           ),
         ),
       );
-
-  bool _isInCurrentWeek(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final monday = today.subtract(Duration(days: today.weekday - 1));
-    final sunday = monday.add(const Duration(days: 6));
-    final dateOnly = DateTime(date.year, date.month, date.day);
-    return !dateOnly.isBefore(monday) && !dateOnly.isAfter(sunday);
-  }
 
   bool _canRequestCancel() {
     if (item.status == ScheduleStatus.done) return false;
@@ -285,15 +318,20 @@ class ScheduleCard extends StatelessWidget {
         item.timeRange.isNotEmpty
             ? 'Tiết ${item.startPeriod} → ${item.endPeriod} (${item.timeRange})'
             : item.periodText;
-    final locked =
-        item.status == ScheduleStatus.done ||
-        item.status == ScheduleStatus.canceled ||
-        effectiveStatus == ScheduleStatus.expired;
-    final isInCurrentWeek = item.sessionDate != null && _isInCurrentWeek(item.sessionDate!);
-    final showCompleteButton = !locked && isInCurrentWeek;
+    
+    // Xác định các điều kiện hiển thị nút
+    final canMarkComplete = _canMarkComplete();
+    final isExpired = _isExpired();
     final showCancelButton = _canRequestCancel();
+    
+    // Xác định label và màu cho nút hoàn thành
+    final completeButtonLabel = isExpired ? 'Điểm danh bù' : 'Hoàn thành';
+    final completeButtonFg = isExpired ? const Color(0xFF6A1B9A) : const Color(0xFF2E7D32);
+    final completeButtonBg = isExpired ? const Color(0xFFF3E5F5) : const Color(0xFFE2F3E6);
+    
     final statusColor = ScheduleStatusStyleX(effectiveStatus).color;
     final statusLabel = ScheduleStatusStyleX(effectiveStatus).label;
+    
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
@@ -363,128 +401,128 @@ class ScheduleCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    if (showCompleteButton || showCancelButton)
+                    if (canMarkComplete || showCancelButton)
                       Row(
                         children: [
-                          if (showCompleteButton)
+                          if (canMarkComplete)
                             _chipButton(
-                              'Hoàn thành',
-                              const Color(0xFF2E7D32),
-                              const Color(0xFFE2F3E6),
+                              completeButtonLabel,
+                              completeButtonFg,
+                              completeButtonBg,
                               () async {
-                              final confirm = await _showConfirmDialog(
-                                context,
-                                title: 'Xác nhận hoàn thành?',
-                                message:
-                                    'Bạn có muốn đánh dấu buổi học này là HOÀN THÀNH không?',
-                                color: const Color(0xFF2E7D32),
-                              );
-                              if (!confirm) return;
-                              if (!context.mounted) return;
-                              final (ok, reason, from, to) = _canCompleteNow();
-                              if (!ok) {
-                                if (!context.mounted) return;
-                                var msg = reason ?? 'Không thể cập nhật.';
-                                if (from != null && to != null) {
-                                  msg +=
-                                      '\nCửa sổ cho phép: ${_formatHm(from)} → ${_formatHm(to)}';
+                                // Nếu là điểm danh bù, mở màn hình nhập lý do
+                                if (isExpired) {
+                                  if (onMarkMakeupAttendance == null) return;
+                                  
+                                  final result = await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => MakeupAttendanceScreen(
+                                        item: item,
+                                        onSubmit: onMarkMakeupAttendance!,
+                                      ),
+                                    ),
+                                  );
+                                  
+                                  if (!context.mounted) return;
+                                  if (result == true) {
+                                    await _showCustomDialog(
+                                      context,
+                                      title: 'Thành công',
+                                      message: 'Đã đánh dấu điểm danh bù thành công',
+                                      titleColor: const Color(0xFF6A1B9A),
+                                      icon: Icons.check_circle,
+                                      iconColor: const Color(0xFF6A1B9A),
+                                    );
+                                  }
+                                  return;
                                 }
-                                if (reason?.contains('Chưa đến thời gian') == true) {
+                                
+                                // Logic hoàn thành bình thường
+                                final confirm = await _showConfirmDialog(
+                                  context,
+                                  title: 'Xác nhận hoàn thành?',
+                                  message: 'Bạn có muốn đánh dấu buổi học này là HOÀN THÀNH không?',
+                                  color: const Color(0xFF2E7D32),
+                                );
+                                if (!confirm) return;
+                                if (!context.mounted) return;
+                                
+                                final (ok, reason, from, _) = _canCompleteNow();
+                                if (!ok) {
+                                  if (!context.mounted) return;
+                                  var msg = reason ?? 'Không thể cập nhật.';
+                                  if (from != null) {
+                                    msg += '\nBuổi học bắt đầu lúc: ${_formatHm(from)}';
+                                  }
                                   await _showCustomDialog(
                                     context,
-                                    title: 'Chưa đến thời gian',
+                                    title: 'Chưa thể đánh dấu',
                                     message: msg,
                                     titleColor: const Color(0xFFFFA726),
                                     icon: Icons.access_time,
                                     iconColor: const Color(0xFFFFA726),
                                   );
-                                } else if (reason?.contains('Quá thời gian') == true) {
+                                  return;
+                                }
+                                
+                                if (onMarkDone == null) return;
+                                try {
+                                  await onMarkDone!();
+                                  if (!context.mounted) return;
                                   await _showCustomDialog(
                                     context,
-                                    title: 'Quá thời gian',
-                                    message: msg,
-                                    titleColor: const Color(0xFFE53935),
-                                    icon: Icons.error_outline,
-                                    iconColor: const Color(0xFFE53935),
+                                    title: 'Thành công',
+                                    message: 'Đã cập nhật: Hoàn thành',
+                                    titleColor: const Color(0xFF43A047),
+                                    icon: Icons.check_circle,
+                                    iconColor: const Color(0xFF43A047),
                                   );
-                                } else if (reason?.contains('ngày diễn ra') == true) {
+                                } catch (e) {
+                                  if (!context.mounted) return;
                                   await _showCustomDialog(
                                     context,
-                                    title: 'Không đúng ngày',
-                                    message: msg,
-                                    titleColor: const Color(0xFFE53935),
-                                    icon: Icons.calendar_today,
-                                    iconColor: const Color(0xFFE53935),
-                                  );
-                                } else {
-                                  await _showCustomDialog(
-                                    context,
-                                    title: 'Không thể hoàn thành',
-                                    message: msg,
+                                    title: 'Lỗi',
+                                    message: e.toString(),
                                     titleColor: const Color(0xFFE53935),
                                     icon: Icons.error_outline,
                                     iconColor: const Color(0xFFE53935),
                                   );
                                 }
-                                return;
-                              }
-                              if (onMarkDone == null) return;
-                              try {
-                                await onMarkDone!();
-                                if (!context.mounted) return;
-                                await _showCustomDialog(
-                                  context,
-                                  title: 'Thành công',
-                                  message: 'Đã cập nhật: Hoàn thành',
-                                  titleColor: const Color(0xFF43A047),
-                                  icon: Icons.check_circle,
-                                  iconColor: const Color(0xFF43A047),
-                                );
-                              } catch (e) {
-                                if (!context.mounted) return;
-                                await _showCustomDialog(
-                                  context,
-                                  title: 'Lỗi',
-                                  message: e.toString(),
-                                  titleColor: const Color(0xFFE53935),
-                                  icon: Icons.error_outline,
-                                  iconColor: const Color(0xFFE53935),
-                                );
-                              }
-                            },
-                          ),
-                          if (showCompleteButton && showCancelButton)
+                              },
+                            ),
+                          if (canMarkComplete && showCancelButton)
                             const SizedBox(width: 10),
                           if (showCancelButton)
                             _chipButton(
                               'Nghỉ dạy',
                               const Color(0xFFF29900),
                               const Color(0xFFFFF1D9),
-                                  () async {
-                              final cancelHandler = onRequestCancel;
-                              if (cancelHandler == null) return;
-                              final result = await Navigator.push<Map<String, dynamic>?>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ClassCancelScreen(
-                                    item: item,
-                                    onSubmit: cancelHandler,
-                                  ),
-                                ),
-                              );
-                              if (!context.mounted) return;
-                              if (result != null) {
-                                await _showCustomDialog(
+                              () async {
+                                final cancelHandler = onRequestCancel;
+                                if (cancelHandler == null) return;
+                                final result = await Navigator.push<Map<String, dynamic>?>(
                                   context,
-                                  title: 'Đã gửi yêu cầu',
-                                  message: 'Trạng thái: ${(result['status'] ?? 'chưa duyệt').toString()}',
-                                  titleColor: const Color(0xFFF29900),
-                                  icon: Icons.send,
-                                  iconColor: const Color(0xFFF29900),
+                                  MaterialPageRoute(
+                                    builder: (_) => ClassCancelScreen(
+                                      item: item,
+                                      onSubmit: cancelHandler,
+                                    ),
+                                  ),
                                 );
-                              }
-                            },
-                          ),
+                                if (!context.mounted) return;
+                                if (result != null) {
+                                  await _showCustomDialog(
+                                    context,
+                                    title: 'Đã gửi yêu cầu',
+                                    message: 'Trạng thái: ${(result['status'] ?? 'chưa duyệt').toString()}',
+                                    titleColor: const Color(0xFFF29900),
+                                    icon: Icons.send,
+                                    iconColor: const Color(0xFFF29900),
+                                  );
+                                }
+                              },
+                            ),
                         ],
                       ),
                   ],

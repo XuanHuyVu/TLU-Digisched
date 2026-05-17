@@ -57,13 +57,29 @@ class ScheduleModel extends ScheduleEntity {
     required super.status,
     required super.subjectName,
     required super.classCode,
+    super.isCompleted,
+    super.completedAt,
+    super.isMakeupAttendance,
+    super.makeupReason,
+    super.makeupFileUrl,
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
-    // Parse sessionDate từ API response
     DateTime? parsedDate;
     if (json['sessionDate'] != null) {
       parsedDate = DateTime.tryParse(json['sessionDate']);
+    }
+    
+    DateTime? parsedCompletedAt;
+    if (json['completedAt'] != null) {
+      parsedCompletedAt = DateTime.tryParse(json['completedAt']);
+    }
+    
+    ScheduleStatus finalStatus;
+    if (json['isCompleted'] == true) {
+      finalStatus = ScheduleStatus.done;
+    } else {
+      finalStatus = statusFromApi(json['status']);
     }
     
     return ScheduleModel(
@@ -79,10 +95,14 @@ class ScheduleModel extends ScheduleEntity {
       roomBuilding: json['roomBuilding'],
       roomName: json['roomName'] ?? '',
       notes: json['notes'],
-      status: statusFromApi(json['status']),
-      // Thông tin từ entry (được thêm vào khi gọi API)
+      status: finalStatus,
       subjectName: json['subjectName'] ?? '',
       classCode: json['classCode'] ?? '',
+      isCompleted: json['isCompleted'] ?? false,
+      completedAt: parsedCompletedAt,
+      isMakeupAttendance: json['isMakeupAttendance'] ?? false,
+      makeupReason: json['makeupReason'],
+      makeupFileUrl: json['makeupFileUrl'],
     );
   }
 }

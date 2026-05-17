@@ -106,6 +106,43 @@ class TeacherRemoteDataSource {
     }
   }
 
+  Future<void> markMakeupAttendance({
+    required int scheduleDetailId,
+    required String reason,
+    String? fileUrl,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final url = Uri.parse('${ApiEndpoints.teacherScheduleDetails}$scheduleDetailId/makeup-attendance');
+
+      if (kDebugMode) {
+        print('📡 Requesting makeup attendance: $url');
+      }
+
+      final body = jsonEncode({
+        'reason': reason,
+        if (fileUrl != null && fileUrl.isNotEmpty) 'fileUrl': fileUrl,
+      });
+
+      final response = await _client
+          .put(url, headers: headers, body: body)
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (kDebugMode) {
+          print('✅ Makeup attendance marked');
+        }
+      } else {
+        throw Exception('Failed to mark makeup attendance: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error: $e');
+      }
+      throw Exception('Không thể đánh dấu điểm danh bù: $e');
+    }
+  }
+
   Future<void> requestClassCancel({
     required int detailId,
     required String reason,

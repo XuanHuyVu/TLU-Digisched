@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -36,7 +37,6 @@ class TeacherRepositoryImpl implements TeacherRepository {
       faculty: teacherFaculty,
     );
 
-    // Fetch all schedules and filter for today
     List<ScheduleEntity> allSchedules = [];
     List<ScheduleEntity> todaySchedules = [];
     int periodsToday = 0;
@@ -49,7 +49,6 @@ class TeacherRepositoryImpl implements TeacherRepository {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       
-      // Filter today's schedules
       todaySchedules = allSchedules.where((s) {
         final scheduleDate = s.sessionDate;
         if (scheduleDate == null) return false;
@@ -60,13 +59,9 @@ class TeacherRepositoryImpl implements TeacherRepository {
         return sameDay;
       }).toList();
       
-      // Calculate periods today
       periodsToday = todaySchedules.fold(0, (sum, s) => sum + s.periodsCount);
-      
-      // Calculate periods this week
       final monday = today.subtract(Duration(days: today.weekday - 1));
       final sunday = monday.add(const Duration(days: 6));
-      
       final thisWeekSchedules = allSchedules.where((s) {
         final scheduleDate = s.sessionDate;
         if (scheduleDate == null) return false;
@@ -75,15 +70,14 @@ class TeacherRepositoryImpl implements TeacherRepository {
       }).toList();
       
       periodsThisWeek = thisWeekSchedules.fold(0, (sum, s) => sum + s.periodsCount);
-      
-      // Calculate completion percentage
-      final completedSchedules = allSchedules.where((s) => s.status == ScheduleStatus.done).length;
+      final completedSchedules = allSchedules.where((s) => s.isCompleted).length;
       final totalSchedules = allSchedules.length;
       percentCompleted = totalSchedules > 0 ? ((completedSchedules / totalSchedules) * 100).round() : 0;
       
     } catch (e) {
-      // If error, return empty data
-      print('Error fetching schedules for home: $e');
+      if (kDebugMode) {
+        print('Error fetching schedules for home: $e');
+      }
     }
 
     return TeacherHomeDataEntity(
@@ -167,6 +161,19 @@ class TeacherRepositoryImpl implements TeacherRepository {
   @override
   Future<void> markScheduleAsDone(int scheduleDetailId) {
     return remoteDataSource.markScheduleAsDone(scheduleDetailId);
+  }
+
+  @override
+  Future<void> markMakeupAttendance({
+    required int scheduleDetailId,
+    required String reason,
+    String? fileUrl,
+  }) {
+    return remoteDataSource.markMakeupAttendance(
+      scheduleDetailId: scheduleDetailId,
+      reason: reason,
+      fileUrl: fileUrl,
+    );
   }
 
   @override

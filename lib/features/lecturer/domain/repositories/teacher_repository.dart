@@ -5,6 +5,11 @@ abstract class TeacherRepository {
   Future<TeacherHomeDataEntity> fetchHomeData();
   Future<List<ScheduleEntity>> fetchAllSchedules();
   Future<void> markScheduleAsDone(int scheduleDetailId);
+  Future<void> markMakeupAttendance({
+    required int scheduleDetailId,
+    required String reason,
+    String? fileUrl,
+  });
   Future<void> requestClassCancel({
     required int detailId,
     required String reason,

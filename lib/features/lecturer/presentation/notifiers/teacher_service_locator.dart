@@ -9,6 +9,7 @@ import '../notifiers/avatar_notifier.dart';
 import '../../domain/usecases/fetch_teacher_home_data_usecase.dart';
 import '../../domain/usecases/fetch_all_schedules_usecase.dart';
 import '../../domain/usecases/mark_schedule_as_done_usecase.dart';
+import '../../domain/usecases/mark_makeup_attendance_usecase.dart';
 import '../../domain/usecases/request_class_cancel_usecase.dart';
 import '../../domain/usecases/fetch_notifications_usecase.dart';
 import '../../domain/usecases/mark_notification_as_read_usecase.dart';
@@ -62,6 +63,9 @@ class TeacherServiceLocator {
     final markScheduleAsDoneUseCase = MarkScheduleAsDoneUseCase(
       repository: teacherRepository,
     );
+    final markMakeupAttendanceUseCase = MarkMakeupAttendanceUseCase(
+      repository: teacherRepository,
+    );
     final requestClassCancelUseCase = RequestClassCancelUseCase(
       repository: teacherRepository,
     );
@@ -87,6 +91,7 @@ class TeacherServiceLocator {
     final scheduleNotifier = TeacherScheduleNotifier(
       fetchAllSchedulesUseCase: fetchAllSchedulesUseCase,
       markScheduleAsDoneUseCase: markScheduleAsDoneUseCase,
+      markMakeupAttendanceUseCase: markMakeupAttendanceUseCase,
       requestClassCancelUseCase: requestClassCancelUseCase,
     );
 
